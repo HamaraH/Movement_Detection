@@ -14,6 +14,8 @@ using namespace cv;
 //faire une fonction qui compare les 2 images d'entré
 //faire une fonction qui lit un ficher pour le flux video
 //faire une fonction qui récupère les valeurs de traitement depuis un fichier txt
+bool presence_mouvement(Mat,Mat,int,double);
+bool presence_mouvement(Mat,Mat);
 
 int main(int argc, char* argv[]){
 
@@ -54,29 +56,42 @@ int main(int argc, char* argv[]){
 //variables image nécéssaire à la transformation -> voir pour réduire?
 	Mat image1= imread("index.jpg", CV_LOAD_IMAGE_COLOR);
 	Mat image2= imread("index2.jpg", CV_LOAD_IMAGE_COLOR);
-	Mat image_diff;
+
+  cout<<"test false :\n";
+  cout<<presence_mouvement(image1,image1);
+
+  cout<<"\ntest true :\n";
+  cout<<presence_mouvement(image1,image2);
+
+	waitKey(0);
+
+  return 0;
+
+}
+
+bool presence_mouvement(Mat input1,Mat input2){
+  return presence_mouvement(input1,input2,25,0.1);
+}
+
+
+bool presence_mouvement(Mat input1,Mat input2,int seuil=25,double pourcentage_meme=0.1){
+
+  Mat image_diff;
   Mat image_diff_gris;
   Mat image_binaire;
 
-
-// a regarde pour les prendre d'un fichier ou les saisir manuellement
-  const int seuille=25;//valeur seuille des pixel à la couleur blanche  -->a continuer de test avec cas réel
-  const double pourcentage_meme = 0.1;//pourcentage de similite nécéssaire pour juger si il y a mouvement
-
-
-
 //différence absolue des 2 images en input
- 	cv::absdiff(image1 , image2  , image_diff);
+  cv::absdiff(input1 , input2  , image_diff);
 
 //met l'image de différence en noir et blanc+ nuances de gris
   cvtColor( image_diff, image_diff_gris, CV_BGR2GRAY );
 
-//met l'image en noir et banc en format binaire noir/blanc ajuster au seuille de différence
-	threshold(image_diff_gris,image_binaire,value,255,0);
+//met l'image en noir et banc en format binaire noir/blanc ajuster au seuil de différence
+  threshold(image_diff_gris,image_binaire,seuil,255,0);
 
 /* affiche les étapes de transformation des images
   imshow("diff",image_diff);
-	imshow("gris",image_diff_gris);
+  imshow("gris",image_diff_gris);
   imshow("binaire",image_binaire);
 */
 
@@ -85,15 +100,11 @@ int main(int argc, char* argv[]){
   printf("%d",nbblanc);
 */
 
-
   double pourcentage = (double)countNonZero(image_binaire)/(image_binaire.rows*image_binaire.cols);//donne le pourcentage de pixels blanc
-
 //printf("%lf\n",pourcentage);//affiche le pourcentage de différence
 
-
-
-	waitKey(0);
-
-  return 0;
-
+  if(pourcentage>=pourcentage_meme)
+    return true;
+  else
+    return false;
 }
