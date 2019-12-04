@@ -37,7 +37,12 @@ public:
     return size;
 
   }
-
+  
+  int get_last_index(){
+    
+  return last_index;
+    
+  }
   cv::Mat* get_buffer(){    //Obtenir le buffer en entier
 
     cv::Mat* tab;
