@@ -76,7 +76,7 @@ public:
 
   bool is_full(){  //Verifier si le buffer est rempli
 
-    if (buffer[ size-1 ] == NULL)
+    if (buffer[ size-1 ].empty)
 
         return  true;
 
@@ -88,7 +88,7 @@ public:
 
   bool is_empty(){  //Verifier si le buffer est rempli
 
-    if (buffer[ 0 ] == NULL)
+    if (buffer[ 0 ].empty)
 
         return  true;
 
