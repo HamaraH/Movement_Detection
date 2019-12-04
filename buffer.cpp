@@ -13,14 +13,14 @@ public:
 
   Buffer(int size){  //Constructeur
 
-    this.buffer = (cv::Mat*) malloc(size*sizeof(cv::Mat));
+    this->buffer = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
   }
 
   Buffer(){  //Constructeur
 
-    this.size = 30;
-    this.buffer = (cv::Mat*) malloc(30*sizeof(cv::Mat));
+    this->size = 30;
+    this->buffer = (cv::Mat*) malloc(30*sizeof(cv::Mat));
 
   }
   
@@ -32,7 +32,7 @@ public:
     
   int get_buffer_size(){   //Recupere la taille du buffer
 
-    return this.size;
+    return this->size;
 
   }
 
@@ -41,21 +41,21 @@ public:
     cv::Mat tab[];
     tab = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
-    cv::Mat* start = get_part_buffer(this.last_index,this.size-1);
-    cv::Mat* end = get_part_buffer(0,this.last_index-1);
+    cv::Mat* start = get_part_buffer(this->last_index,this->size-1);
+    cv::Mat* end = get_part_buffer(0,this->last_index-1);
     
     int j = 0;
 
-    for( int i = this.last_index ; i<=size-1 ; i++ ){
+    for( int i = this->last_index ; i<=size-1 ; i++ ){
 
-      tab[j] = this.buffer[i];
+      tab[j] = this->buffer[i];
       j++;
 
     }
 
-    for( int i = 0 ; i<=this.last_index - 0 ; i++ ){
+    for( int i = 0 ; i<=this->last_index - 0 ; i++ ){
 
-      tab[j] = this.buffer[i];
+      tab[j] = this->buffer[i];
       j++;
 
     }
@@ -64,19 +64,19 @@ public:
 
   void clear_buffer(){  //Remettre le buffer à 0
 
-    for ( int i = 0 ; i < this.size ; i++ ){
+    for ( int i = 0 ; i < this->size ; i++ ){
 
-      this.buffer[i] = NULL;
+      this->buffer[i] = NULL;
 
     }
 
-    this.last_index = 0;
+    this->last_index = 0;
 
   }
 
   bool is_full(){  //Verifier si le buffer est rempli
 
-    if (this.buffer[ size-1 ] == NULL)
+    if (this->buffer[ size-1 ] == NULL)
 
         return  true;
 
@@ -90,7 +90,7 @@ public:
 
   bool is_empty(){  //Verifier si le buffer est rempli
 
-    if (this.buffer[ 0 ] == NULL)
+    if (this->buffer[ 0 ] == NULL)
 
         return  true;
 
@@ -110,14 +110,14 @@ public:
 
   void set_last_mat(cv::Mat image){
 
-    this.buffer[last_index] = image;
+    this->buffer[last_index] = image;
 
-    if (this.last_index == size-1)
-      this.last_index = 0;
+    if (this->last_index == size-1)
+      this->last_index = 0;
 
     else 
 
-      this.last_index++;
+      this->last_index++;
 
   }
 
@@ -130,7 +130,7 @@ public:
 
     for( int i = a ; i<=b ; i++){
 
-      resultat[j] = this.buffer[i];
+      resultat[j] = this->buffer[i];
       j++;
 
     }
