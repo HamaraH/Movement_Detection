@@ -11,13 +11,13 @@ private:
 
 public:
 
-  Buffer::Buffer(int size){  //Constructeur
+  Buffer(int size){  //Constructeur
 
     buffer = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
   }
 
-  Buffer::Buffer(){  //Constructeur
+  Buffer(){  //Constructeur
 
     size = 30;
     buffer = (cv::Mat*) malloc(30*sizeof(cv::Mat));
@@ -30,13 +30,13 @@ public:
     
   }
     
-  int  Buffer::get_buffer_size(){   //Recupere la taille du buffer
+  int  get_buffer_size(){   //Recupere la taille du buffer
 
     return size;
 
   }
 
-  cv::Mat*  Buffer::get_buffer(){    //Obtenir le buffer en entier
+  cv::Mat* get_buffer(){    //Obtenir le buffer en entier
 
     cv::Mat tab[];
     tab = (cv::Mat*) malloc(size*sizeof(cv::Mat));
@@ -62,7 +62,7 @@ public:
 
   }
 
-  void  Buffer::clear_buffer(){  //Remettre le buffer à 0
+  void clear_buffer(){  //Remettre le buffer à 0
 
     for ( int i = 0 ; i < size ; i++ ){
 
@@ -74,7 +74,7 @@ public:
 
   }
 
-  bool Buffer::is_full(){  //Verifier si le buffer est rempli
+  bool is_full(){  //Verifier si le buffer est rempli
 
     if (buffer[ size-1 ] == NULL)
 
@@ -88,7 +88,7 @@ public:
 
   }
 
-  bool  Buffer::is_empty(){  //Verifier si le buffer est rempli
+  bool is_empty(){  //Verifier si le buffer est rempli
 
     if (buffer[ 0 ] == NULL)
 
@@ -102,13 +102,13 @@ public:
 
   }
 
-  cv::Mat Buffer::get_last_mat(){
+  cv::Mat get_last_mat(){
 
     return buffer[last_index-1];
 
   }
 
-  void Buffer::set_last_mat(cv::Mat image){
+  void set_last_mat(cv::Mat image){
 
     buffer[last_index] = image;
 
