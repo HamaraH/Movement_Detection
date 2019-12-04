@@ -74,9 +74,9 @@ public:
 
   }
 
-  const bool is_full(){  //Verifier si le buffer est rempli
+   bool is_full(){  //Verifier si le buffer est rempli
 
-    if (buffer[ size-1 ].empty)
+    if (buffer[ size-1 ].empty())
 
         return  true;
 
@@ -86,9 +86,9 @@ public:
 
   }
 
-  const bool is_empty(){  //Verifier si le buffer est rempli
+  bool is_empty(){  //Verifier si le buffer est rempli
 
-    if (buffer[ 0 ].empty)
+    if (buffer[ 0 ].empty())
 
         return  true;
 
