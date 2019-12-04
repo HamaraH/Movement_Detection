@@ -41,8 +41,8 @@ public:
     cv::Mat tab[];
     tab = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
-    cv::Mat* start = get_part_buffer(this->last_index,this->size-1);
-    cv::Mat* end = get_part_buffer(0,this->last_index-1);
+    /*cv::Mat* start = get_part_buffer(this->last_index,this->size-1);
+    cv::Mat* end = get_part_buffer(0,this->last_index-1);*/
     
     int j = 0;
 
@@ -122,7 +122,7 @@ public:
   }
 
 
-  cv::Mat* get_part_buffer(int a, int b){
+  /*cv::Mat* get_part_buffer(int a, int b){
 
     cv::Mat resultat[];
     resultat = (cv::Mat*) malloc (((b-a)+1) * sizeof(cv::Mat));
@@ -136,6 +136,6 @@ public:
     }
 
     return resultat;
-  }
+  }*/
 
 };
