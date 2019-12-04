@@ -11,13 +11,13 @@ private:
 
 public:
 
-  Buffer(int size){  //Constructeur
+  Buffer::Buffer(int size){  //Constructeur
 
-    this->buffer = (cv::Mat*) malloc(size*sizeof(cv::Mat));
+    buffer = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
   }
 
-  Buffer(){  //Constructeur
+  Buffer::Buffer(){  //Constructeur
 
     this->size = 30;
     this->buffer = (cv::Mat*) malloc(30*sizeof(cv::Mat));
