@@ -102,13 +102,13 @@ public:
 
   }
 
-  Mat get_last_mat(){
+  cv::Mat get_last_mat(){
 
     return buffer[last_index-1];
 
   }
 
-  void set_last_mat(Mat image){
+  void set_last_mat(cv::Mat image){
 
     this.buffer[last_index] = image;
 
@@ -122,7 +122,7 @@ public:
   }
 
 
-  Mat* get_part_buffer(int a, int b){
+  cv::Mat* get_part_buffer(int a, int b){
 
     cv::Mat resultat[];
     resultat = (cv::Mat*) malloc (((b-a)+1) * sizeof(cv::Mat));
