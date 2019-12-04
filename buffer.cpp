@@ -68,7 +68,7 @@ public:
 
   }
 
-  boolean is_full(){  //Verifier si le buffer est rempli
+  bool is_full(){  //Verifier si le buffer est rempli
 
     if (this.buffer[ size-1 ] == NULL)
 
@@ -82,7 +82,7 @@ public:
 
   }
 
-  boolean is_empty(){  //Verifier si le buffer est rempli
+  bool is_empty(){  //Verifier si le buffer est rempli
 
     if (this.buffer[ 0 ] == NULL)
 
@@ -116,7 +116,7 @@ public:
   }
 
 
-  Mat* get_part_buffer(int a,b){
+  Mat* get_part_buffer(int a, int b){
 
     cv::Mat resultat[];
     resultat = (cv::Mat*) malloc (((b-a)+1) * sizeof(cv::Mat));
