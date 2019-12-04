@@ -13,7 +13,7 @@ void set_last_mat(cv::Mat image);
 int get_buffer_size();
 Buffer(int size);
 Buffer();
-cv::Mat* get_part_buffer(int a,b);
+cv::Mat* get_part_buffer(int a,int b);
 
 
 #endif
