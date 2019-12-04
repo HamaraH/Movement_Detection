@@ -11,7 +11,7 @@ private:
   
 public:
 
-  Buffer(int size, Size dimensions){  //Constructeur
+  Buffer(int size, cv::Size dimensions){  //Constructeur
     
     int height = (int) dimensions.height;
     int width = (int) dimensions.width;
