@@ -5,7 +5,7 @@ class Buffer{
 
 private:
 
-  Mat buffer[];   //Stockage des images
+  cv::Mat buffer[];   //Stockage des images
   int size;       //Taille du tableau
   int last_index = 0; //Index de la dernière image stockée
 
@@ -13,14 +13,14 @@ public:
 
   Buffer(int size){  //Constructeur
 
-    this.buffer = (Mat*) malloc(size*sizeof(Mat));
+    this.buffer = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
   }
 
   Buffer(){  //Constructeur
 
     this.size = 30;
-    this.buffer = (Mat*) malloc(30*sizeof(Mat));
+    this.buffer = (cv::Mat*) malloc(30*sizeof(cv::Mat));
 
   }
 
@@ -30,13 +30,13 @@ public:
 
   }
 
-  Mat* get_buffer(){    //Obtenir le buffer en entier
+  cv::Mat* get_buffer(){    //Obtenir le buffer en entier
 
-    Mat tab[];
-    tab = (Mat*) malloc(size*sizeof(Mat));
+    cv::Mat tab[];
+    tab = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
-    Mat* start = get_part_buffer(this.last_index,this.size-1);
-    Mat* end = get_part_buffer(0,this.last_index-1);
+    cv::Mat* start = get_part_buffer(this.last_index,this.size-1);
+    cv::Mat* end = get_part_buffer(0,this.last_index-1);
     
     int j = 0;
 
@@ -118,8 +118,8 @@ public:
 
   Mat* get_part_buffer(int a,b){
 
-    Mat resultat[];
-    resultat = (Mat*) malloc (((b-a)+1) * sizeof(Mat));
+    cv::Mat resultat[];
+    resultat = (cv::Mat*) malloc (((b-a)+1) * sizeof(cv::Mat));
     int j = 0;
 
     for( int i = a ; i<=b ; i++){
