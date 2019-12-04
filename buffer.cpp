@@ -23,7 +23,13 @@ public:
     this.buffer = (cv::Mat*) malloc(30*sizeof(cv::Mat));
 
   }
-
+  
+  ~Buffer(){
+    
+    delete[] buffer;
+    
+  }
+    
   int get_buffer_size(){   //Recupere la taille du buffer
 
     return this.size;
