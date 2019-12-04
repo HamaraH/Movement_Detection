@@ -59,7 +59,9 @@ public:
       j++;
 
     }
-
+    
+    return tab;
+    
   }
 
   void clear_buffer(){  //Remettre le buffer à 0
