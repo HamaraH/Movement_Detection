@@ -98,8 +98,6 @@ public:
 
       return false;
 
-    }
-
   }
 
   cv::Mat get_last_mat(){
