@@ -8,12 +8,15 @@ private:
   cv::Mat* buffer;   //Stockage des images
   int size;       //Taille du tableau
   int last_index; //Index de la dernière image stockée
-
+  
 public:
 
-  Buffer(int size){  //Constructeur
-
-    buffer = (cv::Mat*) malloc(size*sizeof(cv::Mat));
+  Buffer(int size, Size dimensions){  //Constructeur
+    
+    int height = (int) dimensions.height;
+    int width = (int) dimensions.width;
+    
+    buffer = (cv::Mat*) malloc(size*height*width*sizeof(cv::Mat));
     last_index = 0;
     
   }
