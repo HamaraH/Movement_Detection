@@ -63,10 +63,10 @@ public:
   }
 
   void clear_buffer(){  //Remettre le buffer à 0
-
+    cv::Mat vide;
     for ( int i = 0 ; i < size ; i++ ){
 
-      buffer[i] = NULL;
+      buffer[i] = vide;
 
     }
 
@@ -76,7 +76,7 @@ public:
 
    bool is_full(){  //Verifier si le buffer est rempli
 
-    if ( (bool) buffer[ size-1 ].empty())
+    if ( (bool) buffer[ size-1 ].empty()  )
 
         return  true;
 
