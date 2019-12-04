@@ -16,7 +16,7 @@ public:
     int height = (int) dimensions.height;
     int width = (int) dimensions.width;
     
-    buffer = (cv::Mat*) malloc(size*height*width*sizeof(cv::Mat));
+    buffer = (cv::Mat*) malloc(size*height*width*sizeof(int));
     last_index = 0;
     
   }
