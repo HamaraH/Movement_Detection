@@ -38,7 +38,7 @@ public:
 
   cv::Mat* get_buffer(){    //Obtenir le buffer en entier
 
-    cv::Mat tab[];
+    cv::Mat* tab;
     tab = (cv::Mat*) malloc(size*sizeof(cv::Mat));
 
     /*cv::Mat* start = get_part_buffer(this->last_index,this->size-1);
