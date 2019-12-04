@@ -5,7 +5,7 @@ class Buffer{
 
 private:
 
-  cv::Mat buffer[];   //Stockage des images
+  cv::Mat* buffer;   //Stockage des images
   int size;       //Taille du tableau
   int last_index = 0; //Index de la dernière image stockée
 
@@ -83,8 +83,6 @@ public:
     else
 
       return false;
-
-    }
 
   }
 
