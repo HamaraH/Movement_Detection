@@ -1,46 +1,69 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include <ctime>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/videoio/videoio.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
+
+//#include "buffer.hpp"
 
 using namespace std;
 using namespace cv;
 
 
-//faire une fonction qui compare les 2 images d'entré
 //faire une fonction qui lit un ficher pour le flux video
 //faire une fonction qui récupère les valeurs de traitement depuis un fichier txt
 bool presence_mouvement(Mat,Mat,int,double);
 bool presence_mouvement(Mat,Mat);
+// regarder pour faire une fonction qui resize les images pour r"duire le temps de traitement si besoin
 
 int main(int argc, char* argv[]){
 
+/*char ip[200];
+if(argc>1)
+  ip = getConfigurationfromfile(argv[1]);
+else{
+  cout<<"saisir le chemin(200 caractère max)\n";
+  char* path[200];
+  scanf("%s",&path);
+  ip = getConfigurationfromfile(path);
+}*/
+// partie capture du flux -> traitement de l'image a intégrer dedans
 
-/* partie capture du flux -> traitement de l'image a intégrer dedans
+  char ip[]="rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain";
 
   VideoCapture cap;
-  cap.open("http://192.168.0.2:8080/cam");
+	VideoWriter writ;
+  // faire un ping voir si la cam est up
+  cap.open(ip);
+
 
   if(!cap.isOpened()){//regarde si le stream mal ouvert
     cout<<"cam mal chopée\n";
     return -1;
   }
 
-  cout << "Start grabbing" << endl
+  cout << "Start grabbing" << "\n";
 
   Mat oldframe;//= une image
   Mat newframe;//= une image
 
-  cap.read(oldframe);/prend la première image -> pas de traitement nécéssaire
+  cap.read(oldframe);//prend la première image -> pas de traitement nécéssaire
 
+  double fps = cap.get(CAP_PROP_FPS);
+  int codec = cap.get(CAP_PROP_FOURCC); // encodage des images
+	Size size(newframe.cols,newframe.rows);//taille de l'image
+
+  Mat* tab;
+
+  clock_t t1, t2;// pour voir le temps d'exec
+  float temps;
   while(1){
-
+    t1 = clock();
     cap.read(newframe);
-    cout<<"cam chopée\n";
 
     if(newframe.empty()){
       cout<<"frame mal chopée\n";
@@ -48,48 +71,95 @@ int main(int argc, char* argv[]){
     }
 
     //partie traitement des images
+printf("%d\n",presence_mouvement(oldframe,newframe));
+/*
+    //mouvement
+    if(presence_mouvement(oldframe,newframe)){
+
+			if(!writ.isOpened()){
+				//ourir le writ
+        time_t tmm = time(0);
+				char* nomfichier = ctime(&tmm);// le nom du fichier sera la date et l'heure
+				//fps a recup de l'input
+				wit.open(nomfichier,codec,fps,size,true);
+			}
+			//ajouter le buffer si nonvide
+			if(!buffer.is_empty()){
+				tab = buffer.get_buffer();//obtien le buffer, il se peut que certaine cases du tab ne sois pas remplient
+				for(int i=0;i<buffer.get_buffer_size();i++){
+          if(tab[i]==NULL)
+            break;
+          writ.write(tab[i]);
+			}
+      buffer.clear_buffer();
+			//ajouter l'image
+			writ.write(newframe);
+		}
 
 
-  }*/
 
 
-//variables image nécéssaire à la transformation -> voir pour réduire?
+
+    //non mouvement
+    else{
+			//ajouter newframe au buffer l'array
+			buffer.set_last_mat(newframe);
+			if(buffer.is_full()&&writ.isOpened()){//fonction du buffer pas encore fait + type du buffer pas encore créer
+				//importe le tableau du buffer
+        tab=buffer.get_buffer();
+				for(int i=0;i<buffer.get_buffer_size();i++)//size(buffer) pas encore def
+					writ.write(tab[i]);
+
+				writ.release();
+			}
+		}
+
+
+*/
+
+		newframe=oldframe;
+    t2 = clock();
+    temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
+    printf("temps d'exec = %f \n", temps);
+  }
+
+/*//test unitaire de detection de mouvement -> à agrandire
+	//variables image nécéssaire à la transformation
 	Mat image1= imread("index.jpg", CV_LOAD_IMAGE_COLOR);
 	Mat image2= imread("index2.jpg", CV_LOAD_IMAGE_COLOR);
 
-  cout<<"test false :\n";
-  cout<<presence_mouvement(image1,image1);
+  //cout<<"test false :"<<endln;
+  //cout<<presence_mouvement(image1,image1)<<endln;
 
-  cout<<"\ntest true :\n";
-  cout<<presence_mouvement(image1,image2);
-
-	waitKey(0);
-
+  cout<<"test true :"<<"\n";
+  cout<<presence_mouvement(image1,image2)<<"\n";
+	sleep(60);
+*/
   return 0;
 
 }
 
 bool presence_mouvement(Mat input1,Mat input2){
-  return presence_mouvement(input1,input2,25,0.1);
+  return presence_mouvement(input1,input2,25,0.1);//valeur par défaut si vide
 }
 
 
-bool presence_mouvement(Mat input1,Mat input2,int seuil=25,double pourcentage_meme=0.1){
+bool presence_mouvement(Mat input1,Mat input2,int seuil,double pourcentage_meme){//peut etre trop goumand niveau ressource- a test sur raspberry puis regarder solutions
 
   Mat image_diff;
   Mat image_diff_gris;
   Mat image_binaire;
 
 //différence absolue des 2 images en input
-  cv::absdiff(input1 , input2  , image_diff);
+  absdiff(input1 , input2  , image_diff);
 
 //met l'image de différence en noir et blanc+ nuances de gris
-  cvtColor( image_diff, image_diff_gris, CV_BGR2GRAY );
+  cvtColor( image_diff, image_diff_gris, COLOR_BGR2GRAY );
 
 //met l'image en noir et banc en format binaire noir/blanc ajuster au seuil de différence
   threshold(image_diff_gris,image_binaire,seuil,255,0);
 
-/* affiche les étapes de transformation des images
+ /*//affiche les étapes de transformation des images
   imshow("diff",image_diff);
   imshow("gris",image_diff_gris);
   imshow("binaire",image_binaire);
