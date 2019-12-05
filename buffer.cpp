@@ -47,7 +47,7 @@ public:
   cv::Mat* get_buffer(){    //Obtenir le buffer en entier
 
     cv::Mat* tab;
-    tab = (cv::Mat*) malloc(size*sizeof(cv::Mat));
+    tab = new cv::Mat[size];
 
     /*cv::Mat* start = get_part_buffer(this->last_index,this->size-1);
     cv::Mat* end = get_part_buffer(0,this->last_index-1);*/
@@ -61,7 +61,7 @@ public:
 
     }
 
-    for( int i = 0 ; i <= last_index - 0 ; i++ ){
+    for( int i = 0 ; i <= last_index - 1 ; i++ ){
 
       tab[j] = buffer[i];
       j++;
@@ -73,10 +73,10 @@ public:
   }
 
   void clear_buffer(){  //Remettre le buffer à 0
-    cv::Mat vide;
-    for ( int i = 0 ; i < size ; i++ ){
 
-      buffer[i] = vide;
+    for ( int i = 0 ; i < size ; i++ ){
+	buffer[i].deallocate();
+      buffer[i] = NULL;
 
     }
 
@@ -117,7 +117,7 @@ public:
   }
 
   void set_last_mat(cv::Mat image){
-
+	buffer[last_index].deallocate();
     buffer[last_index] = image;
     if (last_index == size-1)
        last_index = 0;
