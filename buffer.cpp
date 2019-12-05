@@ -11,20 +11,18 @@ private:
   
 public:
 
-  Buffer(int size, cv::Size dimensions){  //Constructeur
+  Buffer(int fps){  //Constructeur
     
-    int height = (int) dimensions.height;
-    int width = (int) dimensions.width;
-    
-    buffer = (cv::Mat*) malloc(size*height*width*sizeof(int));
+    buffer= new cv::Mat[fps];
+	size = fps;
     last_index = 0;
     
   }
 
   Buffer(){  //Constructeur
-
+	
     size = 30;
-    buffer = (cv::Mat*) malloc(30*sizeof(cv::Mat));
+    buffer = new cv::Mat[30];
     last_index = 0;
     
   }
@@ -100,13 +98,15 @@ public:
 
   bool is_empty(){  //Verifier si le buffer est rempli
 
+
     if ((bool) buffer[ 0 ].empty())
 
         return  true;
-
+	
     else
 
       return false;
+
 
   }
 
@@ -119,7 +119,6 @@ public:
   void set_last_mat(cv::Mat image){
 
     buffer[last_index] = image;
-
     if (last_index == size-1)
        last_index = 0;
 
@@ -131,18 +130,13 @@ public:
 
 
   /*cv::Mat* get_part_buffer(int a, int b){
-
     cv::Mat resultat[];
     resultat = (cv::Mat*) malloc (((b-a)+1) * sizeof(cv::Mat));
     int j = 0;
-
     for( int i = a ; i<=b ; i++){
-
       resultat[j] = this->buffer[i];
       j++;
-
     }
-
     return resultat;
   }*/
 
