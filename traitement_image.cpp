@@ -70,8 +70,8 @@ else{
 
 
 
-  char ip[]="rtsp://admin:ouidenis7@192.168.0.64:554";
-  //"rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain";
+  //char ip[]="rtsp://admin:ouidenis7@192.168.0.64:554";
+  char ip[]="rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain";
 
 
 
@@ -113,13 +113,13 @@ else{
 
   double fps = cap.get(CAP_PROP_FPS);
 
-  int codec = cap.get(CAP_PROP_FOURCC); // encodage des images
+  int codec = VideoWriter::fourcc('M', 'J', 'P', 'G'); // encodage des images
 
 	Size size(oldframe.cols,oldframe.rows);//taille de l'image
 
 
 
-  Buffer* buffer = new Buffer((int)fps*2,size);
+  Buffer* buffer = new Buffer((int)fps*2);
 
   Mat* tab;
 
@@ -164,8 +164,12 @@ else{
 				//ourir le writ
 
         time_t tmm = time(0);
+        tm* now = localtime(&tmm);
+        std::stringstream ss;
+        ss<<now->tm_mday<<"-"<<now->tm_mon+1<<"-"<<now->tm_year+1900<<":"<<now->tm_hour<<"-"<<now->tm_min<<"-"<<now->tm_sec<<".avi";//je met le spartie du tritre (date+heure+.format)
 
-				char* nomfichier = ctime(&tmm);// le nom du fichier sera la date et l'heure
+				string nomfichier = ss.str();// le nom du fichier sera la date et l'heure
+        //string nomfichier("output.avi");
 
 				//fps a recup de l'input
 
@@ -174,9 +178,9 @@ else{
 			}
 
 			//ajouter le buffer si nonvide
-
+      cout<<"ça passe?\n";
 			if(!buffer->is_empty()){
-
+        cout<<"on est la\?";
 				tab = buffer->get_buffer();//obtien le buffer, il se peut que certaine cases du tab ne sois pas remplient
 
 				for(int i=0;i<buffer->get_buffer_size();i++){
@@ -214,7 +218,7 @@ else{
 
 			//ajouter newframe au buffer l'array
 
-			buffer->set_last_mat(newframe);
+			buffer->set_last_mat(newframe.clone());
 
 			if(buffer->is_full()&&writ.isOpened()){//fonction du buffer pas encore fait + type du buffer pas encore créer
 
@@ -242,7 +246,7 @@ else{
 
 
 
-		newframe=oldframe;
+		oldframe=newframe.clone();
 
     t2 = clock();
 
@@ -350,6 +354,7 @@ bool presence_mouvement(Mat input1,Mat input2,int seuil,double pourcentage_meme)
 
   double pourcentage = (double)countNonZero(image_binaire)/(image_binaire.rows*image_binaire.cols);//donne le pourcentage de pixels blanc
 
+cout<<pourcentage<<"\n";
 //printf("%lf\n",pourcentage);//affiche le pourcentage de différence
 
 
