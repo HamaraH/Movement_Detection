@@ -1,11 +1,14 @@
+CCC=g++
+CFLAGS=-g -I /usr/local/include/opencv4
+LDFLAGS=-fPIC -Wl,-rpath,"/usr/local/lib64"
 
-all: test
+all: detecteur
 
-test: test.o
-	g++ -fPIC -o test test.o -lopencv_videoio -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc
+test: traitement_image.o buffer.o memory.o
+	$(CCC) $(LDFLAGS) -o $@ $^ -lopencv_videoio -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc
 
-test.o: test.cpp
-	g++ -o test.o -I/usr/local/include/opencv4 -c test.cpp
+%.o: %.cpp
+	$(CCC) -o $@ -c $< $(CFLAGS)
 
 clean:
-	rm -f test test.o	
+	rm -f test *.o
