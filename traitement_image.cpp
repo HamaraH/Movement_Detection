@@ -21,11 +21,11 @@ using namespace cv;
 //faire une fonction qui lit un ficher pour avoir l'ip
 //faire une fonction qui récupère les valeurs de traitement depuis un fichier
 
-//potentiellement trop lourde -> regarder pour faire une fonction que resize les images avant mais moins précit
+//potentiellement trop lourde -> regarder pour faire une fonction que resize les images avant mais moins précis
 //deux images en paramètre
 bool presenceMouvement(Mat,Mat);
 
-//même fonction qu'au dessus mais possibilité change la sensibilité de détection
+//même fonction qu'au dessus mais possibilité de changer la sensibilité de détection
 bool presenceMouvement(Mat,Mat,int,double);
 
 //insère dans la video(si ouverte) les images contenues dans le buffer de la plus vielle à la plus récente
@@ -47,11 +47,11 @@ int main(int argc, char* argv[]){
   VideoCapture cap;
   VideoWriter writ;
 
-  // faire un ping voir si la cam est up
+  // faire un ping pour voir si la cam est up
   cap.open(ip);
 
   if (!cap.isOpened()) {
-    //regarde si le stream mal ouvert
+    //regarde si le stream est mal ouvert
     cout<<"cam mal chopée\n";
     return -1;
   }
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]){
   Buffer* buffer = new Buffer((int)fps*2);
 
 
-  // pour voir le temps d'exec
+  // pour voir le temps d'execution
   clock_t t1, t2;
   float temps;
 
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]){
             writ.open(nomfichier,codec,fps,size,true);
         }
 
-        //ajout du contenue du buffer et de l'image du mouvement
+        //ajout du contenu du buffer et de l'image du mouvement
         // + vérification si le writer est ouvert pour plus de sécurité
         if(writ.isOpened()){
           flushBuffer(writ, buffer);
@@ -153,7 +153,7 @@ bool presenceMouvement(Mat input1,Mat input2){
   return presenceMouvement(input1,input2,50,0.1);//valeur par défaut si vide
 }
 
-//peut etre trop goumand niveau ressource- a test sur raspberry puis regarder solutions
+//peut etre trop goumand niveau ressource, a tester sur raspberry puis regarder solutions
 bool presenceMouvement(Mat input1, Mat input2, int seuil, double pourcentage_meme) {
 
   Mat image_diff, image_diff_gris, image_binaire;
@@ -161,10 +161,10 @@ bool presenceMouvement(Mat input1, Mat input2, int seuil, double pourcentage_mem
   //différence absolue des 2 images en input
   absdiff(input1 , input2  , image_diff);
 
-  //met l'image de différence en noir et blanc+ nuances de gris
+  //met l'image de différence en noir et blanc + nuances de gris
   cvtColor( image_diff, image_diff_gris, COLOR_BGR2GRAY );
 
-  //met l'image en noir et banc en format binaire noir/blanc ajuster au seuil de différence
+  //met l'image en noir et banc en format binaire noir/blanc ajustée au seuil de différence
   threshold(image_diff_gris,image_binaire,seuil,255,0);
 
   //donne le pourcentage de pixels blanc
