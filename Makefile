@@ -4,7 +4,7 @@ LDFLAGS=-fPIC -Wl,-rpath,"/usr/local/lib64"
 
 all: detecteur
 
-test: traitement_image.o buffer.o memory.o
+test: traitement_image.o buffer.o 
 	$(CCC) $(LDFLAGS) -o $@ $^ -lopencv_videoio -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_imgproc
 
 %.o: %.cpp

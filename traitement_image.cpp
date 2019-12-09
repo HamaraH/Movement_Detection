@@ -22,8 +22,12 @@ using namespace cv;
 
 //faire une fonction qui récupère les valeurs de traitement depuis un fichier txt
 
-bool presence_mouvement(Mat,Mat,int,double);
-bool presence_mouvement(Mat,Mat);
+//potentiellement trop longue -> regarder pour faire une fonction que resize les images avant mais moins précis
+bool presenceMouvement(Mat,Mat,int,double);
+bool presenceMouvement(Mat,Mat);
+
+//
+void flushBuffer(VideoWriter, Buffer);
 
 
 
@@ -31,7 +35,7 @@ bool presence_mouvement(Mat,Mat);
 // regarder pour faire une fonction qui resize les images pour r"duire le temps de traitement si besoin
 int main(int argc, char* argv[]){
 
-  // partie capture du flux -> traitement de l'image a intégrer dedans
+
   //char ip[]="rtsp://admin:ouidenis7@192.168.0.64:554";
   char ip[]="rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain";
 
@@ -95,7 +99,7 @@ int main(int argc, char* argv[]){
 
     //mouvement
 
-    mouv =presence_mouvement(oldframe,newframe);
+    mouv =presenceMouvement(oldframe,newframe);
 
     if (mouv) {
         if (! writ.isOpened()) {
@@ -119,19 +123,8 @@ int main(int argc, char* argv[]){
 
         //ajouter le buffer si nonvide
         if(writ.isOpened()){
-          if (! buffer->is_empty()) {
-
-              //obtient le buffer, il se peut que certaine cases du tab ne sois pas remplient
-              tab = buffer->get_buffer();
-              for (int i=0;i<buffer->get_buffer_size();i++) {
-                  if (tab[i].empty()) {
-                      break;
-                  }
-                  writ.write(tab[i]);
-              }
-              delete[] tab;
-              buffer->clear_buffer();
-          }
+          flushBuffer(writ, buffer);
+          buffer->clearBuffer();
           //ajouter l'image
           writ.write(newframe);
       }
@@ -143,18 +136,10 @@ int main(int argc, char* argv[]){
         //non mouvement
 
         //ajouter newframe au buffer l'array
-        buffer->set_last_mat(newframe.clone());
-        cout<<buffer->is_full();
-        //fonction du buffer pas encore fait + type du buffer pas encore créer
-        if (buffer->is_full() && writ.isOpened()) {
-            //importe le tableau du buffer
-            tab=buffer->get_buffer();
+        buffer->addMat(newframe.clone());
 
-            for(int i=0;i<buffer->get_buffer_size();i++) {
-                //size(buffer) pas encore def
-                writ.write(tab[i]);
-            }
-            delete[] tab;
+        if (buffer->isFull() && writ.isOpened()) {
+            flushBuffer(writ,buffer);
             writ.release();
         }
     }
@@ -170,33 +155,47 @@ int main(int argc, char* argv[]){
   return 0;
 }
 
-bool presence_mouvement(Mat input1,Mat input2){
-  return presence_mouvement(input1,input2,50,0.1);//valeur par défaut si vide
+
+bool presenceMouvement(Mat input1,Mat input2){
+  return presenceMouvement(input1,input2,50,0.1);//valeur par défaut si vide
 }
 
 //peut etre trop goumand niveau ressource- a test sur raspberry puis regarder solutions
-bool presence_mouvement(Mat input1, Mat input2, int seuil, double pourcentage_meme) {
+bool presenceMouvement(Mat input1, Mat input2, int seuil, double pourcentage_meme) {
 
   Mat image_diff, image_diff_gris, image_binaire;
-  //différence absolue des 2 images en input
 
+  //différence absolue des 2 images en input
   absdiff(input1 , input2  , image_diff);
 
   //met l'image de différence en noir et blanc+ nuances de gris
-
   cvtColor( image_diff, image_diff_gris, COLOR_BGR2GRAY );
 
   //met l'image en noir et banc en format binaire noir/blanc ajuster au seuil de différence
-
   threshold(image_diff_gris,image_binaire,seuil,255,0);
 
   //donne le pourcentage de pixels blanc
   double pourcentage = (double)countNonZero(image_binaire)/(image_binaire.rows*image_binaire.cols);
-  //cout << pourcentage << "\n";
 
   image_diff.release();
   image_diff_gris.release();
   image_binaire.release();
 
   return pourcentage>=pourcentage_meme;
+}
+
+void flushBuffer(Videowriter writer, Buffer* buffer){
+
+  if (! buffer->isEmpty()) {
+      //obtient le buffer, il se peut que certaine cases du tab ne sois pas remplient
+      tab = buffer->getBuffer();
+      for (int i=0;i<buffer->getSize();i++) {
+          if (tab[i].empty()) {
+              break;
+          }
+          writer.write(tab[i]);
+      }
+      delete[] tab;
+  }
+
 }

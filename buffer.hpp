@@ -8,33 +8,32 @@ class Buffer {
 
   private:
     //Stockage des images
-    cv::Mat* buffer; 
-    
+    cv::Mat* buffer;
+
     //Taille du tableau
     int size;
-    
+
     //Index de la dernière image stockée
-    int last_index; 
-    
+    int head;
+
   public:
-  
+
      Buffer(int size);
      Buffer();
      ~Buffer();
-     
-    int get_buffer_size(); 
-    int get_last_index();
 
-    cv::Mat* get_buffer();
-     
-     void clear_buffer();
-     
-     bool is_full();
-     bool is_empty();
-     
-     cv::Mat get_last_mat();
-     void set_last_mat(cv::Mat image);
+    int getSize();
+    int getHead();
+
+    cv::Mat* getBuffer();
+
+     void clearBuffer();
+
+     bool isFull();
+     bool isEmpty();
+
+     cv::Mat getLastMat();
+     void addMat(cv::Mat image);
 };
 
 #endif
-
