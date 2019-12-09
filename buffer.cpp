@@ -60,12 +60,12 @@ void Buffer::clearBuffer(){
 
 //Verifier si le buffer est rempli
 bool Buffer::isFull(){
-    return ! (bool) buffer[ size-1 ].empty();
+    return (! (bool) buffer[ size-1 ].empty());
 }
 
 //Verifier si le buffer est rempli
 bool Buffer::isEmpty(){
-    return (bool) buffer[ 0 ].empty())
+    return ((bool) buffer[ 0 ].empty());
 
 }
 

@@ -18,23 +18,21 @@ using namespace cv;
 
 
 
-//faire une fonction qui lit un ficher pour le flux video
+//faire une fonction qui lit un ficher pour avoir l'ip
+//faire une fonction qui récupère les valeurs de traitement depuis un fichier
 
-//faire une fonction qui récupère les valeurs de traitement depuis un fichier txt
-
-//potentiellement trop longue -> regarder pour faire une fonction que resize les images avant mais moins précis
-bool presenceMouvement(Mat,Mat,int,double);
+//potentiellement trop lourde -> regarder pour faire une fonction que resize les images avant mais moins précit
+//deux images en paramètre
 bool presenceMouvement(Mat,Mat);
 
-//
-void flushBuffer(VideoWriter, Buffer);
+//même fonction qu'au dessus mais possibilité change la sensibilité de détection
+bool presenceMouvement(Mat,Mat,int,double);
+
+//insère dans la video(si ouverte) les images contenues dans le buffer de la plus vielle à la plus récente
+void flushBuffer(cv::VideoWriter writer, Buffer* buffer);
 
 
-
-
-// regarder pour faire une fonction qui resize les images pour r"duire le temps de traitement si besoin
 int main(int argc, char* argv[]){
-
 
   //char ip[]="rtsp://admin:ouidenis7@192.168.0.64:554";
   char ip[]="rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain";
@@ -53,7 +51,6 @@ int main(int argc, char* argv[]){
 
   // image actuelle
   Mat newframe;
-
   // image de reference
   Mat oldframe;
 
@@ -63,28 +60,23 @@ int main(int argc, char* argv[]){
   double fps = 15;
   //cap.get(CAP_PROP_FPS);
 
-  // encodage des images
+  // encodage de la video
   int codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   //taille de l'image
   Size size(oldframe.cols,oldframe.rows);
 
   Buffer* buffer = new Buffer((int)fps*2);
 
-  Mat* tab;
 
   // pour voir le temps d'exec
   clock_t t1, t2;
   float temps;
 
 
-  bool mouv;
-  cout<<(int)fps*2<<"\n";
+
   while(1) {
 
-
-
   //  t1 = clock();
-
 
     cap.read(newframe);
 
@@ -95,33 +87,22 @@ int main(int argc, char* argv[]){
 
     //partie traitement des images
 
-    //printf("%d\n",presence_mouvement(oldframe,newframe));
-
-    //mouvement
-
-    mouv =presenceMouvement(oldframe,newframe);
-
-    if (mouv) {
+    if (presenceMouvement(oldframe,newframe)) {
+        //créer et ouvrir le fichier video si il n'est pas ouvert
         if (! writ.isOpened()) {
-            //ouvrir le writer
-
-            time_t tmm = time(0);
-            tm* now = localtime(&tmm);
-
-            std::stringstream ss;
-
             //je met la partie du titre (date+heure+.format)
             // le nom du fichier sera la date et l'heure
+            time_t tmm = time(0);
+            tm* now = localtime(&tmm);
+            std::stringstream ss;
             ss << now->tm_mday << "-" << now->tm_mon+1 << "-" << now->tm_year+1900 << ":" << now->tm_hour << "-" << now->tm_min << "-" << now->tm_sec << ".avi";
-
-            //string nomfichier("output.avi");
             string nomfichier = ss.str();
 
-            //fps a recup de l'input
             writ.open(nomfichier,codec,fps,size,true);
         }
 
-        //ajouter le buffer si nonvide
+        //ajout du contenue du buffer et de l'image du mouvement
+        // + vérification si le writer est ouvert pour plus de sécurité
         if(writ.isOpened()){
           flushBuffer(writ, buffer);
           buffer->clearBuffer();
@@ -135,9 +116,10 @@ int main(int argc, char* argv[]){
     else {
         //non mouvement
 
-        //ajouter newframe au buffer l'array
+        //ajout de newframe au buffer
         buffer->addMat(newframe.clone());
 
+        //cas pour la fermeture du fichier video
         if (buffer->isFull() && writ.isOpened()) {
             flushBuffer(writ,buffer);
             writ.release();
@@ -177,18 +159,14 @@ bool presenceMouvement(Mat input1, Mat input2, int seuil, double pourcentage_mem
   //donne le pourcentage de pixels blanc
   double pourcentage = (double)countNonZero(image_binaire)/(image_binaire.rows*image_binaire.cols);
 
-  image_diff.release();
-  image_diff_gris.release();
-  image_binaire.release();
-
   return pourcentage>=pourcentage_meme;
 }
 
-void flushBuffer(Videowriter writer, Buffer* buffer){
+void flushBuffer(cv::VideoWriter writer, Buffer* buffer){
 
   if (! buffer->isEmpty()) {
       //obtient le buffer, il se peut que certaine cases du tab ne sois pas remplient
-      tab = buffer->getBuffer();
+      Mat* tab = buffer->getBuffer();
       for (int i=0;i<buffer->getSize();i++) {
           if (tab[i].empty()) {
               break;
