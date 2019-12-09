@@ -34,8 +34,15 @@ void flushBuffer(cv::VideoWriter writer, Buffer* buffer);
 
 int main(int argc, char* argv[]){
 
+  if(argc != 3){
+    cout<<"Le nombre de paramètre n'est pas bon\n";
+    return -1;
+  }
+
+
   //char ip[]="rtsp://admin:ouidenis7@192.168.0.64:554";
-  char ip[]="rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain";
+  //char ip[]="rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain";
+  char* ip = argv[1];
 
   VideoCapture cap;
   VideoWriter writ;
@@ -57,7 +64,11 @@ int main(int argc, char* argv[]){
   //prend la première image -> pas de traitement nécéssaire
   cap.read(oldframe);
   //valeur fixe : provisoire -> regarder si CAP_PROP_FPS bug avec d'autres cams
-  double fps = 15;
+  double fps =atof(argv[2]);
+  if(fps==0){
+    cout<<"valeur des fps incorrect\n";
+    return -1;
+  }
   //cap.get(CAP_PROP_FPS);
 
   // encodage de la video
