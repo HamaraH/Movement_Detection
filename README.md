@@ -1,5 +1,6 @@
-TO DO
+(nom des fichier classe peut changer )
 
+TO DO
 - finir d'encapsuler le programme dans des classes
 - modifier buffer.cpp/hpp pour qu'il utilise une std::list et des vecteurs
 - ajouter le ping vers la camera avant le lancement du programme
