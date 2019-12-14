@@ -43,8 +43,6 @@ private:
   int seuil;
 
   ToWrite writeQueue;
-  queue<Mat> toWrite;
-  bool continueWrite;
 
   //permet de stoper la detection
   bool stop;

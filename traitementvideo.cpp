@@ -25,7 +25,7 @@
 using namespace std;
 using namespace cv;
 
-TraitementVideo(){
+TraitementVideo::TraitementVideo(){
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   this->writeQueue.mutexInit();
 }
@@ -48,7 +48,7 @@ TraitementVideo::TraitementVideo(String url){
     }
     this->setFps(temp);
 
-    this->name = this.capture.getBackendName();
+    this->cameraname = this.capture.getBackendName();
   }
   else{
     cout<<"ip non reconnue\n";
@@ -83,7 +83,7 @@ TraitementVideo::TraitementVideo(String url, String name){
   }
   this->sensibility = 0.1;
   this->seuil= 25;
-  this->name = name;
+  this->cameraname = name;
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   this->writeQueue.mutexInit();
 
@@ -106,7 +106,7 @@ TraitementVideo::TraitementVideo(String url, int seuil, double sensibility){
       temp =20;
     }
     this->setFps(temp);
-    this->name = this.capture.getBackendName();
+    this->cameraname = this.capture.getBackendName();
   }
   else{
     cout<<"ip non reconnue\n";
@@ -139,7 +139,7 @@ TraitementVideo::TraitementVideo(String ip, String name, int seuil, double sensi
   else{
     cout<<"ip non reconnue\n";
   }
-  this->name = name;
+  this->cameraname = name;
   this->seuil = seuil;
   this->sensibility = sensibility;
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
@@ -147,7 +147,16 @@ TraitementVideo::TraitementVideo(String ip, String name, int seuil, double sensi
 
 }
 
-TraitementVideo::~TraitementVideo();// destructeur à faire
+TraitementVideo::~TraitementVideo(){
+  this->capture.release();
+  this->writer->release;
+  this->url.~string();
+  this->cameraname.~string();
+  this->buffer.~Buffer();
+  this->oldframe.release();
+  this->newframe.release();
+  this->writeQueue.~ToWrite();
+}
 
 bool TraitementVideo::presenceMouvement(){
   Mat image_diff, image_diff_gris, image_binaire;
@@ -177,9 +186,17 @@ void TraitementVideo::flushBuffer(){
 
 int TraitementVideo::traitement(){
 
+  if(tnis->cameraname.empty()){
+    this->cameraname->"defaultname";
+  }
   if(! this->capture.isOpened()){
-    //ping -> si bon
+    if(this->pingIp(this->getIp())){
     this->capture.open(this->ip);
+    }
+    else{
+      cout<<"ip non reconnue\n";
+      return -1;
+    }
     //si pas bon afficher erreur et return -1
   }
 
@@ -220,7 +237,9 @@ int TraitementVideo::traitement(){
     if (this->presenceMouvement()) {
       //créer et ouvrir le fichier video si il n'est pas ouvert
       if (! this->writer.isOpened()) {
+        thread()
         // appel du thread de l'opening de l'écriture
+
         //mettre la variable de la boucle a true
       }
 
@@ -229,7 +248,7 @@ int TraitementVideo::traitement(){
       this->flushBuffer();
       this->buffer.clearBuffer();
       //ajouter l'image
-      this->writerQueue.getQueue().push(this->newframe.clone());
+      this->writeQueue.getQueue().push(this->newframe.clone());
 
     }
 
@@ -244,7 +263,7 @@ int TraitementVideo::traitement(){
       //cas pour la fermeture du fichier video
       if (this->buffer->isFull() && this->writer.isOpened()) {
         this->flushBuffer();
-        this->writerQueue.setContinueWrite(false);
+        this->writeQueue.setContinueWrite(false);
       }
     }
 
@@ -428,7 +447,6 @@ String TraitementVideo::getUrl(){
 }
 //réinitialise tous les paramètres précédament assigné sauf le nom le codec, le seuil et la sensibilité
 int TraitementVideo::setUrl(String url){
-  delete this->url;
   if(this->capture.isOpened()){
     this->capture.release();
   }
@@ -456,7 +474,6 @@ String TraitementVideo::getCameraName(){
   return this->cameraname;
 }
 String TraitementVideo::setCameraName(String cameraname){
-  delete this->cameraname;
     this->cemeraname = cameraname;
 }
 
