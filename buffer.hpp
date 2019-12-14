@@ -1,5 +1,6 @@
 
 #include <opencv2/core/core.hpp>
+#include <queue>
 
 #ifndef BUFFER_H
 #define BUFFER_H
@@ -8,13 +9,11 @@ class Buffer {
 
   private:
     //Stockage des images
-    cv::Mat* buffer;
+    cv::queue<cv::Mat> buffer;
 
     //Taille du tableau
     int size;
 
-    //Index de la dernière image stockée
-    int head;
 
   public:
 
@@ -23,9 +22,10 @@ class Buffer {
      ~Buffer();
 
     int getSize();
-    int getHead();
+    void setSize(int size);
 
-    cv::Mat* getBuffer();
+    std::queue<cv::Mat> getBuffer();
+
 
      void clearBuffer();
 

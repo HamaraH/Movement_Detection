@@ -24,7 +24,7 @@ class TraitementVideo {
 private:
   //variable pour la capture video
   VideoCapture capture;
-  String ip;
+  String url;
 
   //variable pour l'écriture de la video
   VideoWriter writer;
@@ -53,10 +53,10 @@ private:
 public:
 
 TraitementVideo();
-TraitementVideo(String ip);
-TraitementVideo(String ip, String name);
-TraitementVideo(String ip, int seuil, double sensibility);
-TraitementVideo(String ip, String name, int seuil, double sensibility);
+TraitementVideo(String url);
+TraitementVideo(String url, String name);
+TraitementVideo(String url, int seuil, double sensibility);
+TraitementVideo(String url, String name, int seuil, double sensibility);
 ~TraitementVideo();
 
 bool presenceMouvement();
@@ -65,7 +65,8 @@ int traitement();
 void toToWrite(queue<Mat> temp);
 void * writeThread(void * arg);
 void stop();
-
+string getIp();
+bool pingIp(string ipAdress);
 
 VideoCapture getCapture();
 void setCapture(Videocapture cap);
@@ -90,8 +91,8 @@ void setSeuil(int seuil);
 double getSensibility();
 void setSensibility(double sensibility);
 
-String getIp();
-int setIp(String ip);
+String getUrl();
+int setUrl(String url);
 
 String getCameraName();
 String setCameraName(String cameraname);

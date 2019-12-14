@@ -6,8 +6,13 @@
 #include <sys/types.h>
 #include <list>
 #include <queue>
+#include <fstream>
+#include <vector>
+#include <cstdlib>
 
 #include <pthread.h>
+#include <unistd.h>
+
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/videoio/videoio.hpp>
@@ -22,70 +27,90 @@ using namespace cv;
 
 TraitementVideo(){
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
+  this->writeQueue.mutexInit();
 }
 
-TraitementVideo::TraitementVideo(String ip){
+TraitementVideo::TraitementVideo(String url){
   if(this->capture.isOpened()){
     this->capture.release();
   }
-  //ping bon
-  Mat data;
-  this->capture.open(ip);
-  this->capture.read(data);
+  this->url=url;
+  if(this->pingIp(this->getIp())){
+    Mat data;
+    this->capture.open(ip);
+    this->capture.read(data);
 
-  this->size= Size(data.cols,data.rows);
-  double temp = this->capture.get(CAP_PROP_FPS);
-  // on regarde si les fps sont valide car la fonction peut bug
-  if(temps>120){
-    temp =20;
+    this->size= Size(data.cols,data.rows);
+    double temp = this->capture.get(CAP_PROP_FPS);
+    // on regarde si les fps sont valide car la fonction peut bug
+    if(temps>120){
+      temp =20;
+    }
+    this->setFps(temp);
+
+    this->name = this.capture.getBackendName();
   }
-  this->setFps(temp);
-
-  this->name = this.capture.getBackendName();
+  else{
+    cout<<"ip non reconnue\n";
+  }
+  this->sensibility = 0.1;
+  this->seuil= 25;
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   this->writeQueue.mutexInit();
   // ping pas bon -> prévenir l'utilisateur
 }
 
-TraitementVideo::TraitementVideo(String ip, String name){
+TraitementVideo::TraitementVideo(String url, String name){
   if(this->capture.isOpened()){
     this->capture.release();
   }
-  // ping
-  Mat data;
-  this->capture.open(ip);
-  this->capture.read(data);
+  this->url = url;
+  if(this->pingIp(this->getIp())){
+    Mat data;
+    this->capture.open(ip);
+    this->capture.read(data);
 
-  this->setSize(data.cols,data.rows);
-  tdouble temp = this->capture.get(CAP_PROP_FPS);
-  // on regarde si les fps sont valide car la fonction peut bug
-  if(temps>120){
-    temp =20;
+    this->setSize(data.cols,data.rows);
+    tdouble temp = this->capture.get(CAP_PROP_FPS);
+    // on regarde si les fps sont valide car la fonction peut bug
+    if(temps>120){
+      temp =20;
+    }
+    this->setFps(temp);
   }
-  this->setFps(temp);
+  else{
+    cout<<"ip non reconnue\n";
+  }
+  this->sensibility = 0.1;
+  this->seuil= 25;
   this->name = name;
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   this->writeQueue.mutexInit();
 
 }
 
-TraitementVideo::TraitementVideo(String ip, int seuil, double sensibility){
+TraitementVideo::TraitementVideo(String url, int seuil, double sensibility){
   if(this->capture.isOpened()){
     this->capture.release();
   }
-  // ping
-  Mat data;
-  this->capture.open(ip);
-  this->capture.read(data);
+  this->url = url;
+  if(this->pingIp(this->getIp())){
+    Mat data;
+    this->capture.open(ip);
+    this->capture.read(data);
 
-  this->setSize(data.cols,data.rows);
-  double temp = this->capture.get(CAP_PROP_FPS);
-  // on regarde si les fps sont valide car la fonction peut bug
-  if(temps>120){
-    temp =20;
+    this->setSize(data.cols,data.rows);
+    double temp = this->capture.get(CAP_PROP_FPS);
+    // on regarde si les fps sont valide car la fonction peut bug
+    if(temps>120){
+      temp =20;
+    }
+    this->setFps(temp);
+    this->name = this.capture.getBackendName();
   }
-  this->setFps(temp);
-  this->name = this.capture.getBackendName();
+  else{
+    cout<<"ip non reconnue\n";
+  }
   this->seuil = seuil;
   this->sensibility = sensibility;
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
@@ -97,19 +122,23 @@ TraitementVideo::TraitementVideo(String ip, String name, int seuil, double sensi
   if(this->capture.isOpened()){
     this->capture.release();
   }
-  // ping
-  Mat data;
-  this->capture.open(ip);
-  this->capture.read(data);
+  this->url = url;
+  if(this->pingIp(this->getIp())){
+    Mat data;
+    this->capture.open(ip);
+    this->capture.read(data);
 
-  this->setSize(data.cols,data.rows);
-  double temp = this->capture.get(CAP_PROP_FPS);
-  // on regarde si les fps sont valide car la fonction peut bug
-  if(temps>120){
-    temp =20;
+    this->setSize(data.cols,data.rows);
+    double temp = this->capture.get(CAP_PROP_FPS);
+    // on regarde si les fps sont valide car la fonction peut bug
+    if(temps>120){
+      temp =20;
+    }
+    this->setFps(temp);
   }
-  this->setFps(temp);
-
+  else{
+    cout<<"ip non reconnue\n";
+  }
   this->name = name;
   this->seuil = seuil;
   this->sensibility = sensibility;
@@ -140,14 +169,9 @@ bool TraitementVideo::presenceMouvement(){
 void TraitementVideo::flushBuffer(){
   if (! this->buffer.isEmpty()) {
       //obtient le buffer, il se peut que certaine cases du tab ne sois pas remplient
-      Mat* tab = this->buffer.getBuffer();//remplacer le tab par un vecteur
-      for (int i=0;i<this->buffer.getSize();i++) {
-          if (tab[i].empty()) {
-              break;
-          }
-          this->writer.write(tab[i]);
-      }
-      delete[] tab;
+      queue<Mat> tab = this->buffer.getBuffer();//remplacer le tab par un vecteur
+      this->toToWrite(tab);
+      tab.~queue();
   }
 }
 
@@ -179,8 +203,8 @@ int TraitementVideo::traitement(){
   // pour voir le temps d'exec
   //clock_t t1, t2;
   //float temps;
-
-  while(this->stop) {
+  this->stop = false;
+  while(! this->stop) {
 
     //  t1 = clock();
 
@@ -196,25 +220,17 @@ int TraitementVideo::traitement(){
     if (this->presenceMouvement()) {
       //créer et ouvrir le fichier video si il n'est pas ouvert
       if (! this->writer.isOpened()) {
-        //je met la partie du titre (date+heure+.format)
-        // le nom du fichier sera la date et l'heure
-        time_t tmm = time(0);
-        tm* now = localtime(&tmm);
-        std::stringstream ss;
-        ss <<this->cameraname<<"/"<< now->tm_mday << "-" << now->tm_mon+1 << "-" << now->tm_year+1900 << ":" << now->tm_hour << "-" << now->tm_min << "-" << now->tm_sec << ".avi";
-        string nomfichier = ss.str();
-
-        this->writer.open(nomfichier,this->codec,this->fps,this->size,true);
+        // appel du thread de l'opening de l'écriture
+        //mettre la variable de la boucle a true
       }
 
       //ajout du contenue du buffer et de l'image du mouvement
-      // + vérification si le writer est ouvert pour plus de sécurité
-      if(this->writer.isOpened()){
-        this->flushBuffer();
-        this->buffer.clearBuffer();
-        //ajouter l'image
-        this->writer.write(this->newframe);
-      }
+
+      this->flushBuffer();
+      this->buffer.clearBuffer();
+      //ajouter l'image
+      this->writerQueue.getQueue().push(this->newframe.clone());
+
     }
 
 
@@ -223,26 +239,28 @@ int TraitementVideo::traitement(){
       //non mouvement
 
       //ajout de newframe au buffer
-      buffer->addMat(newframe.clone());
+      this->buffer->addMat(this->newframe.clone());
 
       //cas pour la fermeture du fichier video
-      if (buffer->isFull() && writ.isOpened()) {
-        flushBuffer(writ,buffer);
-        writ.release();
+      if (this->buffer->isFull() && this->writer.isOpened()) {
+        this->flushBuffer();
+        this->writerQueue.setContinueWrite(false);
       }
     }
 
-    oldframe.release();
-    oldframe=newframe.clone();
+    this->oldframe.release();
+    this->oldframe=this->newframe.clone();// regarder pour l'effacer: remplacer oldframe par la denrière image du buffer
 
     /*  t2 = clock();
     temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
     printf("temps d'exec = %f \n", temps);*/
   }
 
+
+  //attendre la fin des threads
   return 0;
 
-}
+}// a continuer(finir le threading + implementation du ping)
 
 
 void TraitementVideo::toToWrite(queue<Mat> temp){
@@ -255,24 +273,80 @@ void TraitementVideo::toToWrite(queue<Mat> temp){
 void * TraitementVideo::writeThread(void * arg){
   TraitementVideo * data = (TraitementVideo *) arg;
   // check si le writer est ouvert : wait
+  while(data->writer.isOpened){
+    sleep(0.1);
+  }
 
-  //ouvrir le Writer
+
+  time_t tmm = time(0);
+  tm* now = localtime(&tmm);
+  std::stringstream ss;
+  ss <<this->cameraname<<"/"<< now->tm_mday << "-" << now->tm_mon+1 << "-" << now->tm_year+1900 << ":" << now->tm_hour << "-" << now->tm_min << "-" << now->tm_sec << ".avi";
+  string nomfichier = ss.str();
+
+  data->writer.open(nomfichier,data->codec,data->fps,data->size,true);
+
+  data->continueWrite.setContinueWrite(true);
 
   while(data->continueWrite){
-    if(! data->toWrite.empty()){
-      data->Writer
+    if(! data->writeQueue.getQueue().empty()){
+      data->writer.write(data->writeQueue.getQueue().front());
+      data->writeQueue.getQueue().pop();
     }
   }
-  //mutex la struc de la queue toWrite
-  //copy le bousin
-  //finir le write avec la copy
+  data->writeQueue.mutexBlock();
+  queue<Mat> temp = data->writeQueue.getQueue()
+  data->writeQueue.mutexOpen();
+  while(! temp.empty()){
+    data->writer.write(temp.front());
+    temp.pop();
+  }
+  data->writer.release();
+  pthread_exit(NULL);
 }
 
 
 
 void TraitementVideo::stop(){
-  this.stop = 0;
+  this.stop = true;
 }
+
+ // récupère l'ip dans l'url d'accès à la caméra
+string TraitementVideo::getIp(){
+
+    string protocol = this->url.substr(0, 4);
+    string ip;
+
+    if (protocol == "rtsp"){
+        int pos1 = url.find("@") + 1;
+        int pos2 = url.find_last_of(":");
+        ip = url.substr(pos1, pos2-pos1);
+
+    }
+    else if(protocol == "http"){
+        int pos1 = url.find_last_of("/") + 1;
+        int pos2 = url.find_last_of(":");
+        ip = url.substr(pos1, pos2-pos1);
+    }
+    else{
+      ip = url;
+      cout<<"protocole inconnue\n";
+    }
+    return ip;
+
+}
+
+bool TraitementVideo::pingIp(string ipAdress){  //retourne un boolean : true si l'adresse est accessible, false sinon
+    int ping = system(("ping " + ipAdress).c_str());
+    if (ping == 0){
+      return true;
+    }
+    else{
+      return false;
+    }
+}
+
+
 
 
 
@@ -349,14 +423,32 @@ void TraitementVideo::setSensibility(double sensibility){
 }
 
 
-String TraitementVideo::getIp(){
-  return this->ip;
+String TraitementVideo::getUrl(){
+  return this->url;
 }
-//réinitialise tous les paramètres précédament assigné sauf le nom et le codec
-int TraitementVideo::setIp(String ip){
-  delete this->ip;
-  this->ip = ip;
-  //reconfig les params (comme dans le constructeur)
+//réinitialise tous les paramètres précédament assigné sauf le nom le codec, le seuil et la sensibilité
+int TraitementVideo::setUrl(String url){
+  delete this->url;
+  if(this->capture.isOpened()){
+    this->capture.release();
+  }
+  this->url = url;
+  if(this->pingIp(this->getIpbrut())){
+    Mat data;
+    this->capture.open(ip);
+    this->capture.read(data);
+
+    this->setSize(data.cols,data.rows);
+    double temp = this->capture.get(CAP_PROP_FPS);
+    // on regarde si les fps sont valide car la fonction peut bug
+    if(temps>120){
+      temp =20;
+    }
+    this->setFps(temp);
+  }
+  else{
+    cout<<"ip non reconnue\n";
+  }
 }
 
 
@@ -397,20 +489,6 @@ int TraitementVideo::getCodec(){
 void TraitementVideo::setCodec(int codec){
   this->codec = codec;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
