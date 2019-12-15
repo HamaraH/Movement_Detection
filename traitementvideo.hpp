@@ -13,11 +13,35 @@
 #include "buffer.hpp"
 
 
-#ifndef BUFFER_H
-#define BUFFER_H
+#ifndef TRAITEMENTVIDEO_H
+#define TRAITEMENTVIDEO_H
 
 using namespace std;
 using namespace cv;
+
+class ToWrite{
+
+private:
+
+  queue<Mat> imgToWrite;
+  bool continueWrite;
+  pthread_mutex_t mutex;
+public:
+  ToWrite();
+  ~ToWrite();
+
+  void setContinueWrite(bool);
+  bool getContinueWrite();
+
+  void mutexInit();
+  void mutexBlock();
+  void mutexOpen();
+
+  queue<Mat> getQueue();
+};
+
+
+
 
 class TraitementVideo {
 
@@ -44,8 +68,11 @@ private:
 
   ToWrite writeQueue;
 
+  pthread_t thread[2];
+  int compteurThread;
+
   //permet de stoper la detection
-  bool stop;
+  bool continueTraitement;
 
 
 public:
@@ -59,7 +86,7 @@ TraitementVideo(String url, String name, int seuil, double sensibility);
 
 bool presenceMouvement();
 void flushBuffer();
-int traitement();
+void * traitement();
 void toToWrite(queue<Mat> temp);
 void * writeThread(void * arg);
 void stop();
@@ -67,7 +94,7 @@ string getIp();
 bool pingIp(string ipAdress);
 
 VideoCapture getCapture();
-void setCapture(Videocapture cap);
+void setCapture(VideoCapture cap);
 
 VideoWriter getWriter();
 void setWriter(VideoWriter writer);
@@ -112,26 +139,6 @@ void setCodec(int codec);
 
 };
 
-class ToWrite{
-
-private:
-
-  queue<Mat> queue;
-  bool continueWrite;
-  pthread_mutex mutex;
-public:
-  toWrite();
-  ~toWrite();
-
-  void setContinueWrite(bool);
-  bool getContinueWrite();
-
-  void mutexInit();
-  void mutexBlock();
-  void mutexOpen();
-
-  queue<Mat> getQueue();
-};
 
 
 

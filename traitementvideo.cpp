@@ -19,8 +19,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "buffer.hpp"
-#include "traitementvideo.cpp"
+#include "traitementvideo.hpp"
 
 using namespace std;
 using namespace cv;
@@ -149,13 +148,9 @@ TraitementVideo::TraitementVideo(String ip, String name, int seuil, double sensi
 
 TraitementVideo::~TraitementVideo(){
   this->capture.release();
-  this->writer->release;
-  this->url.~string();
-  this->cameraname.~string();
-  this->buffer.~Buffer();
+  this->writer.release();
   this->oldframe.release();
   this->newframe.release();
-  this->writeQueue.~ToWrite();
 }
 
 bool TraitementVideo::presenceMouvement(){
@@ -180,11 +175,10 @@ void TraitementVideo::flushBuffer(){
       //obtient le buffer, il se peut que certaine cases du tab ne sois pas remplient
       queue<Mat> tab = this->buffer.getBuffer();//remplacer le tab par un vecteur
       this->toToWrite(tab);
-      tab.~queue();
   }
 }
 
-int TraitementVideo::traitement(){
+void * TraitementVideo::traitement(){
 
   if(tnis->cameraname.empty()){
     this->cameraname->"defaultname";
@@ -195,7 +189,7 @@ int TraitementVideo::traitement(){
     }
     else{
       cout<<"ip non reconnue\n";
-      return -1;
+      pthread_exit(NULL);
     }
     //si pas bon afficher erreur et return -1
   }
@@ -203,7 +197,7 @@ int TraitementVideo::traitement(){
   if (! this->capture.isOpened()) {
     //regarde si le stream mal ouvert
     cout<<this->cameraname<<" cam mal chopée\n";
-    return -1;
+    pthread_exit(NULL);
   }
 
   // créer le répertoire de stockage de video
@@ -217,11 +211,15 @@ int TraitementVideo::traitement(){
   //prend la première image -> pas de traitement nécéssaire
   this->capture.read(this->oldframe);
 
+  this->compteurThread=0;
+
   // pour voir le temps d'exec
   //clock_t t1, t2;
   //float temps;
-  this->stop = false;
-  while(! this->stop) {
+
+
+  this->continueTraitement = true;
+  while(this->continueTraitement) {
 
     //  t1 = clock();
 
@@ -229,7 +227,7 @@ int TraitementVideo::traitement(){
 
     if (this->newframe.empty()) {
       cout <<yhis->cameraname<< " frame mal chopée\n";
-      return -1;
+      pthread_exit(NULL);
     }
 
     //partie traitement des images
@@ -237,8 +235,14 @@ int TraitementVideo::traitement(){
     if (this->presenceMouvement()) {
       //créer et ouvrir le fichier video si il n'est pas ouvert
       if (! this->writer.isOpened()) {
-        thread()
-        // appel du thread de l'opening de l'écriture
+        if(! pthread_create(&this->thread[this->compteurThread],NULL,TraitementVideo::writeThread,&this)){
+          cout<<"problème de création de thread\n";
+        }
+        //devoir tempo un coup
+        while(! this->writeQueue.getContinueWrite()){
+          //boucle d'attente le temps que compteur thread soit dupliqué
+        }
+        this->compteurThread = this->compteurThread++ % 2;
 
         //mettre la variable de la boucle a true
       }
@@ -274,12 +278,14 @@ int TraitementVideo::traitement(){
     temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
     printf("temps d'exec = %f \n", temps);*/
   }
+  if(this->writeQueue.getContinueWrite()){
+    this->flushBuffer();
+  }
+  pthread_join(this->thread[0],NULL);
+  pthread_join(this->thread[1],NULL);
+  pthread_exit(NULL);
 
-
-  //attendre la fin des threads
-  return 0;
-
-}// a continuer(finir le threading + implementation du ping)
+}
 
 
 void TraitementVideo::toToWrite(queue<Mat> temp){
@@ -291,11 +297,9 @@ void TraitementVideo::toToWrite(queue<Mat> temp){
 
 void * TraitementVideo::writeThread(void * arg){
   TraitementVideo * data = (TraitementVideo *) arg;
-  // check si le writer est ouvert : wait
-  while(data->writer.isOpened){
-    sleep(0.1);
-  }
-
+  int i = (data->compteurThread +1) % 2;
+  data->writeQueue.setContinueWrite(true);
+  pthread_join(data->thread[i],NULL);
 
   time_t tmm = time(0);
   tm* now = localtime(&tmm);
@@ -305,7 +309,6 @@ void * TraitementVideo::writeThread(void * arg){
 
   data->writer.open(nomfichier,data->codec,data->fps,data->size,true);
 
-  data->continueWrite.setContinueWrite(true);
 
   while(data->continueWrite){
     if(! data->writeQueue.getQueue().empty()){
@@ -327,7 +330,7 @@ void * TraitementVideo::writeThread(void * arg){
 
 
 void TraitementVideo::stop(){
-  this.stop = true;
+  this.continueTraitement = false;
 }
 
  // récupère l'ip dans l'url d'accès à la caméra
@@ -376,7 +379,7 @@ bool TraitementVideo::pingIp(string ipAdress){  //retourne un boolean : true si 
 VideoCapture TraitementVideo::getCapture(){
   return this->capture;
 }
-void TraitementVideo::setCapture(Videocapture capture){
+void TraitementVideo::setCapture(VideoCapture capture){
   this->capture.release();
   this->capture = capture
 }
@@ -517,11 +520,10 @@ void TraitementVideo::setCodec(int codec){
 // class toWrite
 
 
-ToWrite::toWrite(){
+ToWrite::ToWrite(){
   this->mutex = PTHREAD_MUTEX_INITIALIZER;
 }
-ToWrite::~toWrite(){
-  this->queue.~queue();
+ToWrite::~ToWrite(){
 }
 
 void ToWrite::setContinueWrite(bool value){
@@ -544,5 +546,5 @@ void ToWrite::mutexOpen(){
 }
 
 queue<Mat> ToWrite::getQueue(){
-  return this->queue;
+  return this->imgToWrite;
 }

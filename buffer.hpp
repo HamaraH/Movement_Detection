@@ -9,7 +9,7 @@ class Buffer {
 
   private:
     //Stockage des images
-    cv::queue<cv::Mat> buffer;
+    std::queue<cv::Mat> buffer;
 
     //Taille du tableau
     int size;
