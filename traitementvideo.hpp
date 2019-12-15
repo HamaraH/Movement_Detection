@@ -86,27 +86,29 @@ TraitementVideo(String url, String name, int seuil, double sensibility);
 
 bool presenceMouvement();
 void flushBuffer();
-void * traitement();
+static void *traitement(void * arg);
 void toToWrite(queue<Mat> temp);
-void * writeThread(void * arg);
+static void *writeThread(void * arg);
 void stop();
+void initstop();
 string getIp();
 bool pingIp(string ipAdress);
+void readNextFrame();
 
-VideoCapture getCapture();
+VideoCapture* getCapture();
 void setCapture(VideoCapture cap);
 
-VideoWriter getWriter();
+VideoWriter* getWriter();
 void setWriter(VideoWriter writer);
 
-Buffer getBuffer();
+Buffer* getBuffer();
 void setBuffer(Buffer buffer);
 
-Mat getOldframe();
+Mat* getOldframe();
 void setOldframe(Mat oldframe);
 void setOldframeCopy(Mat oldframe);
 
-Mat getNewframe();
+Mat* getNewframe();
 void setNewframe(Mat newframe);
 void setNewframeCopy(Mat newframe);
 
@@ -117,10 +119,10 @@ double getSensibility();
 void setSensibility(double sensibility);
 
 String getUrl();
-int setUrl(String url);
+void setUrl(String url);
 
 String getCameraName();
-String setCameraName(String cameraname);
+void setCameraName(String cameraname);
 
 Size getSize();
 void setSize(Size size);
@@ -132,10 +134,14 @@ void setFps(double fps);
 int getCodec();
 void setCodec(int codec);
 
+int getCompteurThread();
+void setCompteurThread(int i);
 
+bool getContinueTraitement();
 
+pthread_t getThread(int i);
 
-
+ToWrite* getWriteQueue();
 
 };
 
