@@ -1,4 +1,3 @@
-(nom des fichier classe peut changer )
 
 TO DO
 - faire la classe vecteur TraitementVideo
