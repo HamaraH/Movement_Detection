@@ -173,8 +173,10 @@ bool TraitementVideo::presenceMouvement(){
 void TraitementVideo::flushBuffer(){
   if (! this->buffer.isEmpty()) {
       //obtient le buffer, il se peut que certaine cases du tab ne sois pas remplient
-      queue<Mat> tab = this->buffer.getBuffer();//remplacer le tab par un vecteur
-      this->toToWrite(tab);
+      this->toToWrite(this->buffer.getBuffer());
+  }
+  else{
+    cout<<"rien a flush\n";
   }
 }
 
@@ -225,6 +227,8 @@ void *TraitementVideo::traitement(void *arg){
   data->initstop();
   while(data->getContinueTraitement()) {
 
+    cout<<data->getBuffer()->currentSize()<<"\n";
+    cout<<data->getWriteQueue()->getQueue()->size()<<"\n";
     //  t1 = clock();
 
     data->readNextFrame();
@@ -238,12 +242,12 @@ void *TraitementVideo::traitement(void *arg){
     if (data->presenceMouvement()) {
       //créer et ouvrir le fichier video si il n'est pas ouvert
       if (! data->getWriter()->isOpened()) {
-        pthread_t * thread = data->getThread(data->getCompteurThread());//-----------a revoir(on garde pas le thread)-------------------------------------zone sensible peu etre memoryleak ou erreur de seg
-        if(! pthread_create(thread,NULL,TraitementVideo::writeThread,data) == 0 ){
+        //pthread_t * thread = ;//-----------a revoir(on garde pas le thread)-------------------------------------zone sensible peu etre memoryleak ou erreur de seg
+        if(! pthread_create(data->getThread(data->getCompteurThread()),NULL,TraitementVideo::writeThread,data) == 0 ){
           cout<<"problème de création de thread\n";
         }
         data->setCompteurThread((data->getCompteurThread()+1) % 2);
-
+        data->setLastFlush(true);
       }
 
       //ajout du contenue du buffer et de l'image du mouvement
@@ -252,7 +256,9 @@ void *TraitementVideo::traitement(void *arg){
       data->getBuffer()->clearBuffer();
       cout<<"buffer is empty : "<< data->getBuffer()->isEmpty()<<"\n";
       //ajouter l'image
+      data->getWriteQueue()->mutexBlock();
       data->getWriteQueue()->getQueue()->push(data->getNewframe()->clone());
+      data->getWriteQueue()->mutexOpen();
 
     }
 
@@ -264,9 +270,12 @@ void *TraitementVideo::traitement(void *arg){
 
       data->getBuffer()->addMat(data->getNewframe()->clone());
       //cas pour la fermeture du fichier video
-      if (data->getBuffer()->isFull() && data->getWriter()->isOpened()) {
+      if (data->getBuffer()->isFull() && data->getWriter()->isOpened() && data->getLastFlush()) {
+        cout<<"coucou\n";
         data->flushBuffer();
+        data->setLastFlush(false);
         data->getWriteQueue()->setContinueWrite(false);
+
       }
     }
 
@@ -289,7 +298,9 @@ void *TraitementVideo::traitement(void *arg){
 
 void TraitementVideo::toToWrite(queue<Mat> temp){
   while(! temp.empty()){
+    this->writeQueue.mutexBlock();
     this->writeQueue.getQueue()->push(temp.front());
+    this->writeQueue.mutexOpen();
     temp.pop();
   }
 }
@@ -298,10 +309,12 @@ void *TraitementVideo::writeThread(void * arg){
 
   TraitementVideo * data = (TraitementVideo *) arg;
 
-  data->getWriteQueue()->setContinueWrite(true);
 
   while(data->getWriter()->isOpened()){
   }
+
+  data->getWriteQueue()->setContinueWrite(true);
+
   time_t tmm = time(0);
   tm* now = localtime(&tmm);
   std::stringstream ss;
@@ -309,20 +322,34 @@ void *TraitementVideo::writeThread(void * arg){
   //faire fonction interne open  avec nomfichier en param
   data->getWriter()->open(ss.str(),data->getCodec(),data->getFps(),data->getSize(),true);
 
+
+
+
   while(data->getWriteQueue()->getContinueWrite()){
     if(! data->getWriteQueue()->getQueue()->empty()){
+      data->getWriteQueue()->mutexBlock();
+
       data->getWriter()->write(data->getWriteQueue()->getQueue()->front());
       data->getWriteQueue()->getQueue()->pop();
+
+      data->getWriteQueue()->mutexOpen();
     }
   }
+
+
+
   data->getWriteQueue()->mutexBlock();
   queue<Mat> temp = data->getWriteQueue()->duplicateQueue();
+  data->getWriteQueue()->Purge();
   data->getWriteQueue()->mutexOpen();
+
   while(! temp.empty()){
     data->getWriter()->write(temp.front());
     temp.pop();
   }
+
   data->getWriter()->release();
+
   cout<<"fin thread écriture\n";
   pthread_exit(NULL);
 }
@@ -531,6 +558,14 @@ bool TraitementVideo::getContinueTraitement(){
   return this->continueTraitement;
 }
 
+
+bool TraitementVideo::getLastFlush(){
+  return this->lastFlush;
+}
+void TraitementVideo::setLastFlush(bool value){
+  this->lastFlush = value;
+}
+
 pthread_t * TraitementVideo::getThread(int i){
   return &this->thread[i];
 }
@@ -589,4 +624,10 @@ queue<Mat>* ToWrite::getQueue(){
 }
 queue<Mat> ToWrite::duplicateQueue(){
   return this->imgToWrite;
+}
+
+void ToWrite::Purge(){
+  while(! this->imgToWrite.empty()){
+    this->imgToWrite.pop();
+  }
 }

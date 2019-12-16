@@ -40,6 +40,8 @@ public:
 
   queue<Mat>* getQueue();
   queue<Mat> duplicateQueue();
+
+  void Purge();
 };
 
 
@@ -75,6 +77,7 @@ private:
 
   //permet de stoper la detection
   bool continueTraitement;
+  bool lastFlush;
 
 
 public:
@@ -140,6 +143,9 @@ int getCompteurThread();
 void setCompteurThread(int i);
 
 bool getContinueTraitement();
+
+bool getLastFlush();
+void setLastFlush(bool value);
 
 pthread_t * getThread(int i);
 

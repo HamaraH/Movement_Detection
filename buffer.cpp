@@ -57,3 +57,7 @@ void Buffer::addMat(cv::Mat image){
     }
     this->buffer.push(image);
 }
+
+int Buffer::currentSize(){
+  return this->buffer.size();
+}

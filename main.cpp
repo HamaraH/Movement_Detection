@@ -11,7 +11,7 @@ int main(){
   printf("entrer un nombre pour arreter\n");
   scanf("%d",&d);
   t.stop();
-  cout<<"apresè stop\n";
+  cout<<"après stop\n";
   pthread_join(thread, NULL);
   cout<<"après join\n";
   exit(0);

@@ -34,6 +34,8 @@ class Buffer {
 
      cv::Mat getLastMat();
      void addMat(cv::Mat image);
+
+     int currentSize();
 };
 
 #endif
