@@ -157,22 +157,26 @@ bool isWriterOpened();
 bool writerOpen(string nomfichier);
 
 };
-/*
+
 class  MultiTraitement{
 private:
-  Vector<TraitementVideo> vecteurTraitement;
+  vector<TraitementVideo> vecteurTraitement;
+  vector<pthread_t> vecteurThread;
 
 public:
   MultiTraitement();
+  MultiTraitement(string path);
   ~MultiTraitement();
 
  void stopAll();
 
   TraitementVideo getTraitementVideo(int i);
+  pthread_t getThread(int i);
+  int getNbElem();
 
   static vector<String> getUrls();
   static vector<String> getUrls(String path);
 
 
-};*/
+};
 #endif

@@ -227,8 +227,6 @@ void *TraitementVideo::traitement(void *arg){
   data->initstop();
   while(data->getContinueTraitement()) {
 
-    cout<<data->getBuffer()->currentSize()<<"\n";
-    cout<<data->getWriteQueue()->getQueue()->size()<<"\n";
     //  t1 = clock();
 
     data->readNextFrame();
@@ -254,7 +252,6 @@ void *TraitementVideo::traitement(void *arg){
 
       data->flushBuffer();
       data->getBuffer()->clearBuffer();
-      cout<<"buffer is empty : "<< data->getBuffer()->isEmpty()<<"\n";
       //ajouter l'image
       data->getWriteQueue()->mutexBlock();
       data->getWriteQueue()->getQueue()->push(data->getNewframe()->clone());
@@ -271,7 +268,6 @@ void *TraitementVideo::traitement(void *arg){
       data->getBuffer()->addMat(data->getNewframe()->clone());
       //cas pour la fermeture du fichier video
       if (data->getBuffer()->isFull() && data->getWriter()->isOpened() && data->getLastFlush()) {
-        cout<<"coucou\n";
         data->flushBuffer();
         data->setLastFlush(false);
         data->getWriteQueue()->setContinueWrite(false);
@@ -286,9 +282,12 @@ void *TraitementVideo::traitement(void *arg){
   //si on attendait les 2 secondes de fin : on envoie ce qu'il y a dans le buffer
   if(data->getWriteQueue()->getContinueWrite()){
     data->flushBuffer();
+    data->setLastFlush(false);
+    data->getWriteQueue()->setContinueWrite(false);
   }
 
   while(data->getWriter()->isOpened()){
+    sleep(0.5);
     // attend la fermeture du writer = fin du thread d'écriture
   }
   pthread_exit(NULL);
@@ -311,6 +310,7 @@ void *TraitementVideo::writeThread(void * arg){
 
 
   while(data->getWriter()->isOpened()){
+    sleep(0.5);
   }
 
   data->getWriteQueue()->setContinueWrite(true);
@@ -390,7 +390,7 @@ string TraitementVideo::getIp(){
 }
 
 bool TraitementVideo::pingIp(string ipAdress){  //retourne un boolean : true si l'adresse est accessible, false sinon
-    int ping = system(("ping " + ipAdress).c_str());
+int ping = system(("ping " + ipAdress + " -c 2").c_str());
     if (ping == 0){
       return true;
     }
@@ -630,4 +630,76 @@ void ToWrite::Purge(){
   while(! this->imgToWrite.empty()){
     this->imgToWrite.pop();
   }
+}
+
+
+
+
+// MultiTraitement
+
+
+
+MultiTraitement::MultiTraitement(){
+  vector<String> ipList = MultiTraitement::getUrls("configuration.txt");
+  for(int i = 0; i < ipList.size();i++){
+    this->vecteurTraitement.push_back(TraitementVideo(ipList[i]));
+    pthread_t t;
+    this->vecteurThread.push_back(t);
+  }
+
+}
+
+MultiTraitement::MultiTraitement(string path){
+  vector<String> ipList = MultiTraitement::getUrls(path);
+  for(int i = 0; i < ipList.size();i++){
+    this->vecteurTraitement.push_back(TraitementVideo(ipList[i]));
+    pthread_t t;
+    this->vecteurThread.push_back(t);
+  }
+}
+
+MultiTraitement::~MultiTraitement(){
+  this->vecteurTraitement.clear();
+  this->vecteurThread.clear();
+}
+
+void MultiTraitement::stopAll(){
+  for(int i = 0; i < this->vecteurTraitement.size(); i++){
+    vecteurTraitement[i].stop();
+  }
+}
+
+TraitementVideo MultiTraitement::getTraitementVideo(int i){
+
+  return this->vecteurTraitement[i];
+}
+
+pthread_t MultiTraitement::getThread(int i){
+
+  return this->vecteurThread[i];
+}
+
+int MultiTraitement::getNbElem(){
+  return this->vecteurTraitement.size();
+}
+
+vector<String> MultiTraitement::getUrls(String path){
+
+  ifstream f(path.c_str());
+  vector<string> ip; //contient les adresses ip
+  string adress;
+
+  if(f){ // si le chemin est bon
+    while(getline(f, adress)){   //on lit le fichier ligne par ligne
+      ip.push_back(adress);
+    }
+  }
+  else {// si le fichier ne s'ouvre pas : erreur
+    cout << "Impossible d'acceder aux adresses IP des cameras" << endl;
+  }
+
+  f.close();
+
+  return ip;
+
 }
