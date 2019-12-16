@@ -25,8 +25,7 @@ void Buffer::setSize(int size){
 }
 
 std::queue<cv::Mat> Buffer::getBuffer(){    //Obtenir le buffer en entier
-    std::queue<cv::Mat> tab = this->buffer;
-    return tab;
+  return this->buffer;
 }
 
 

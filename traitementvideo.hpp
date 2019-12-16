@@ -3,6 +3,7 @@
 #include <string>
 #include <ctime>
 #include <queue>
+#include <vector>
 
 #include <pthread.h>
 
@@ -37,7 +38,8 @@ public:
   void mutexBlock();
   void mutexOpen();
 
-  queue<Mat> getQueue();
+  queue<Mat>* getQueue();
+  queue<Mat> duplicateQueue();
 };
 
 
@@ -139,13 +141,32 @@ void setCompteurThread(int i);
 
 bool getContinueTraitement();
 
-pthread_t getThread(int i);
+pthread_t * getThread(int i);
 
 ToWrite* getWriteQueue();
 
+bool isCaptureOpened();
+bool isWriterOpened();
+
+bool writerOpen(string nomfichier);
+
 };
+/*
+class  MultiTraitement{
+private:
+  Vector<TraitementVideo> vecteurTraitement;
+
+public:
+  MultiTraitement();
+  ~MultiTraitement();
+
+ void stopAll();
+
+  TraitementVideo getTraitementVideo(int i);
+
+  static vector<String> getUrls();
+  static vector<String> getUrls(String path);
 
 
-
-
+};*/
 #endif

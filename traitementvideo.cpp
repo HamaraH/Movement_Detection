@@ -188,19 +188,23 @@ void *TraitementVideo::traitement(void *arg){
 
   if(! data->getCapture()->isOpened()){
     if(data->pingIp(data->getIp())){
-    data->getCapture()->open(data->getUrl());
+      //initialise les les partie non initialisé : voir pour fair eune autre fonction ?
+      data->setUrl(data->getUrl());
+      data->getCapture()->open(data->getUrl());
+
+      if (! data->getCapture()->isOpened()) {
+        //regarde si le stream mal ouvert
+        cout<<data->getCameraName()<<" cam mal chopée\n";
+        pthread_exit(NULL);
+      }
     }
     else{
-      cout<<"ip non reconnue\n";
+      cout<<"url non reconnue\n";
       pthread_exit(NULL);
     }
     //si pas bon afficher erreur et return -1
   }
-  if (! data->getCapture()->isOpened()) {
-    //regarde si le stream mal ouvert
-    cout<<data->getCameraName()<<" cam mal chopée\n";
-    pthread_exit(NULL);
-  }
+
   // créer le répertoire de stockage de video
   if (chdir(data->getCameraName().c_str())==0){
     chdir("../");
@@ -234,25 +238,21 @@ void *TraitementVideo::traitement(void *arg){
     if (data->presenceMouvement()) {
       //créer et ouvrir le fichier video si il n'est pas ouvert
       if (! data->getWriter()->isOpened()) {
-        pthread_t thread = data->getThread(data->getCompteurThread());//----------------------------------------------------------------zone sensible peu etre memoryleak ou erreur de seg
-        if(! pthread_create(&thread,NULL,TraitementVideo::writeThread,&data)){
+        pthread_t * thread = data->getThread(data->getCompteurThread());//-----------a revoir(on garde pas le thread)-------------------------------------zone sensible peu etre memoryleak ou erreur de seg
+        if(! pthread_create(thread,NULL,TraitementVideo::writeThread,data) == 0 ){
           cout<<"problème de création de thread\n";
-        }
-        //devoir tempo un coup
-        while(! data->getWriteQueue()->getContinueWrite()){
-          //boucle d'attente le temps que compteur thread soit dupliqué
         }
         data->setCompteurThread((data->getCompteurThread()+1) % 2);
 
-        //mettre la variable de la boucle a true
       }
 
       //ajout du contenue du buffer et de l'image du mouvement
 
       data->flushBuffer();
       data->getBuffer()->clearBuffer();
+      cout<<"buffer is empty : "<< data->getBuffer()->isEmpty()<<"\n";
       //ajouter l'image
-      data->getWriteQueue()->getQueue().push(data->getNewframe()->clone());
+      data->getWriteQueue()->getQueue()->push(data->getNewframe()->clone());
 
     }
 
@@ -261,10 +261,8 @@ void *TraitementVideo::traitement(void *arg){
     else {
       //non mouvement
       //ajout de newframe au buffer
-      Mat test;
-      test = data->getNewframe()->clone();
-      data->getBuffer()->addMat(test);
-      test.release();
+
+      data->getBuffer()->addMat(data->getNewframe()->clone());
       //cas pour la fermeture du fichier video
       if (data->getBuffer()->isFull() && data->getWriter()->isOpened()) {
         data->flushBuffer();
@@ -276,14 +274,14 @@ void *TraitementVideo::traitement(void *arg){
     temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
     printf("temps d'exec = %f \n", temps);*/
   }
+  //si on attendait les 2 secondes de fin : on envoie ce qu'il y a dans le buffer
   if(data->getWriteQueue()->getContinueWrite()){
     data->flushBuffer();
   }
-  cout<<"attente sous-thread\n";
-  while(data->getWriter()->isOpened()){
 
+  while(data->getWriter()->isOpened()){
+    // attend la fermeture du writer = fin du thread d'écriture
   }
-  cout<<"fin traitement\n";
   pthread_exit(NULL);
 
 }
@@ -291,40 +289,34 @@ void *TraitementVideo::traitement(void *arg){
 
 void TraitementVideo::toToWrite(queue<Mat> temp){
   while(! temp.empty()){
-    this->writeQueue.getQueue().push(temp.front());
+    this->writeQueue.getQueue()->push(temp.front());
     temp.pop();
   }
 }
 
 void *TraitementVideo::writeThread(void * arg){
-  cout<<"début thread écriture\n";
+
   TraitementVideo * data = (TraitementVideo *) arg;
-  int i = (data->getCompteurThread() +1) % 2;
-  cout<<"après assigne i\n";
+
   data->getWriteQueue()->setContinueWrite(true);
-  cout<<"après modif continuewrite\n";
 
   while(data->getWriter()->isOpened()){
-
   }
-  cout<<"thread process intermédiaire\n";
   time_t tmm = time(0);
   tm* now = localtime(&tmm);
   std::stringstream ss;
   ss <<data->getCameraName()<<"/"<< now->tm_mday << "-" << now->tm_mon+1 << "-" << now->tm_year+1900 << ":" << now->tm_hour << "-" << now->tm_min << "-" << now->tm_sec << ".avi";
-  string nomfichier = ss.str();
-
-  data->getWriter()->open(nomfichier,data->getCodec(),data->getFps(),data->getSize(),true);
-
+  //faire fonction interne open  avec nomfichier en param
+  data->getWriter()->open(ss.str(),data->getCodec(),data->getFps(),data->getSize(),true);
 
   while(data->getWriteQueue()->getContinueWrite()){
-    if(! data->getWriteQueue()->getQueue().empty()){
-      data->getWriter()->write(data->getWriteQueue()->getQueue().front());
-      data->getWriteQueue()->getQueue().pop();
+    if(! data->getWriteQueue()->getQueue()->empty()){
+      data->getWriter()->write(data->getWriteQueue()->getQueue()->front());
+      data->getWriteQueue()->getQueue()->pop();
     }
   }
   data->getWriteQueue()->mutexBlock();
-  queue<Mat> temp = data->getWriteQueue()->getQueue();
+  queue<Mat> temp = data->getWriteQueue()->duplicateQueue();
   data->getWriteQueue()->mutexOpen();
   while(! temp.empty()){
     data->getWriter()->write(temp.front());
@@ -402,8 +394,9 @@ void TraitementVideo::setCapture(VideoCapture capture){
 
 
 VideoWriter* TraitementVideo::getWriter(){
-  return &(this->writer);
+  return &this->writer;
 }
+
 void TraitementVideo::setWriter(VideoWriter writer){
   this->writer.release();
   this->writer = writer;
@@ -538,12 +531,26 @@ bool TraitementVideo::getContinueTraitement(){
   return this->continueTraitement;
 }
 
-pthread_t TraitementVideo::getThread(int i){
-  return this->thread[i];
+pthread_t * TraitementVideo::getThread(int i){
+  return &this->thread[i];
 }
 
 ToWrite* TraitementVideo::getWriteQueue(){
   return &this->writeQueue;
+}
+
+
+
+
+bool TraitementVideo::isCaptureOpened(){
+  return this->capture.isOpened();
+}
+bool TraitementVideo::isWriterOpened(){
+  return this->writer.isOpened();
+}
+
+bool TraitementVideo::writerOpen(string nomfichier){
+  return this->writer.open(nomfichier,this->codec,this->fps,this->size,true);
 }
 
 
@@ -577,6 +584,9 @@ void ToWrite::mutexOpen(){
 
 }
 
-queue<Mat> ToWrite::getQueue(){
+queue<Mat>* ToWrite::getQueue(){
+  return &this->imgToWrite;
+}
+queue<Mat> ToWrite::duplicateQueue(){
   return this->imgToWrite;
 }
