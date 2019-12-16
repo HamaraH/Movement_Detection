@@ -1,6 +1,6 @@
 CCC=g++
 CFLAGS=-g -I /usr/local/include/opencv4
-LDFLAGS=-fPIC -Wl,-rpath,"/usr/local/lib64"
+LDFLAGS=-fPIC -Wl,-rpath,"/usr/local/lib"
 
 all: detecteur
 
