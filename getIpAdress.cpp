@@ -67,7 +67,7 @@ string getIp(string url){ // récupère l'ip dans l'url d'accès à la caméra
 
 bool pingIp(string ipAdress){  //retourne un boolean : true si l'adresse est accessible, false sinon
 	
-    int ping = system(("ping " + ipAdress).c_str());
+    int ping = system(("ping " + ipAdress + " -c 2").c_str());
 	
     if (ping == 0)
 	    
