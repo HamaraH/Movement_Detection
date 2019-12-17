@@ -665,11 +665,15 @@ MultiTraitement::MultiTraitement(string path){
     this->vecteurThread.push_back(new pthread_t);
     cout<<"un de plus\n";
   }
-  
+
 }
 
 MultiTraitement::~MultiTraitement(){
-  this->vecteurTraitement.clear();
+  for(int i=0;i<this->vecteurTraitement.size();i++){
+    delete this->vecteurTraitement[i];
+    delete this->vecteurThread[i];
+  }
+  this->vecteurTraitement.clear();//finir ça
   this->vecteurThread.clear();
 }
 
