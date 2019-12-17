@@ -160,8 +160,8 @@ bool writerOpen(string nomfichier);
 
 class  MultiTraitement{
 private:
-  vector<TraitementVideo> vecteurTraitement;
-  vector<pthread_t> vecteurThread;
+  vector<TraitementVideo*> vecteurTraitement;
+  vector<pthread_t*> vecteurThread;
 
 public:
   MultiTraitement();
@@ -170,9 +170,12 @@ public:
 
  void stopAll();
 
-  TraitementVideo getTraitementVideo(int i);
-  pthread_t getThread(int i);
+  TraitementVideo* getTraitementVideo(int i);
+  pthread_t * getThread(int i);
   int getNbElem();
+
+  void threadAll();
+  void waitAll();
 
   static vector<String> getUrls();
   static vector<String> getUrls(String path);

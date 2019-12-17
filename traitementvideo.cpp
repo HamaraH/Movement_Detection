@@ -147,10 +147,10 @@ TraitementVideo::TraitementVideo(String ip, String name, int seuil, double sensi
 }
 
 TraitementVideo::~TraitementVideo(){
-  this->capture.release();
+/*  this->capture.release();
   this->writer.release();
   this->oldframe.release();
-  this->newframe.release();
+  this->newframe.release();*/
 }
 
 bool TraitementVideo::presenceMouvement(){
@@ -174,9 +174,6 @@ void TraitementVideo::flushBuffer(){
   if (! this->buffer.isEmpty()) {
       //obtient le buffer, il se peut que certaine cases du tab ne sois pas remplient
       this->toToWrite(this->buffer.getBuffer());
-  }
-  else{
-    cout<<"rien a flush\n";
   }
 }
 
@@ -220,16 +217,20 @@ void *TraitementVideo::traitement(void *arg){
 
   data->setCompteurThread(0);
 
-  // pour voir le temps d'exec
-  //clock_t t1, t2;
-  //float temps;
+  /*// pour voir le temps d'exec
+  clock_t t1, t2;
+  float temps;*/
 
   data->initstop();
   while(data->getContinueTraitement()) {
 
-    //  t1 = clock();
 
     data->readNextFrame();
+
+
+
+    //t1 = clock();
+
     if (data->getNewframe()->empty()) {
       cout <<data->getCameraName()<< " frame mal chopée\n";
       pthread_exit(NULL);
@@ -262,6 +263,8 @@ void *TraitementVideo::traitement(void *arg){
 
 
     else {
+      //t2 = clock();
+
       //non mouvement
       //ajout de newframe au buffer
 
@@ -275,8 +278,7 @@ void *TraitementVideo::traitement(void *arg){
       }
     }
 
-    /*  t2 = clock();
-    temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
+    /*temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
     printf("temps d'exec = %f \n", temps);*/
   }
   //si on attendait les 2 secondes de fin : on envoie ce qu'il y a dans le buffer
@@ -403,6 +405,7 @@ void TraitementVideo::readNextFrame(){
   this->newframe.copyTo(this->oldframe);
   this->capture.read(this->newframe);
 }
+
 
 
 
@@ -642,9 +645,12 @@ void ToWrite::Purge(){
 MultiTraitement::MultiTraitement(){
   vector<String> ipList = MultiTraitement::getUrls("configuration.txt");
   for(int i = 0; i < ipList.size();i++){
-    this->vecteurTraitement.push_back(TraitementVideo(ipList[i]));
-    pthread_t t;
-    this->vecteurThread.push_back(t);
+    cout<<"et de 1\n";
+    this->vecteurTraitement.push_back(new TraitementVideo(ipList[i]));
+    cout<<"la\n";
+    cout<<"ou la\n";
+    this->vecteurThread.push_back(new pthread_t);
+    cout<<"un de plus\n";
   }
 
 }
@@ -652,10 +658,14 @@ MultiTraitement::MultiTraitement(){
 MultiTraitement::MultiTraitement(string path){
   vector<String> ipList = MultiTraitement::getUrls(path);
   for(int i = 0; i < ipList.size();i++){
-    this->vecteurTraitement.push_back(TraitementVideo(ipList[i]));
-    pthread_t t;
-    this->vecteurThread.push_back(t);
+    cout<<"et de 1\n";
+    this->vecteurTraitement.push_back(new TraitementVideo(ipList[i]));
+    cout<<"la\n";
+    cout<<"ou la\n";
+    this->vecteurThread.push_back(new pthread_t);
+    cout<<"un de plus\n";
   }
+  
 }
 
 MultiTraitement::~MultiTraitement(){
@@ -663,21 +673,34 @@ MultiTraitement::~MultiTraitement(){
   this->vecteurThread.clear();
 }
 
-void MultiTraitement::stopAll(){
-  for(int i = 0; i < this->vecteurTraitement.size(); i++){
-    vecteurTraitement[i].stop();
+void MultiTraitement::waitAll(){
+  for(int i =0;i<this->vecteurThread.size();i++){
+    pthread_join(*vecteurThread[i],NULL);
   }
 }
 
-TraitementVideo MultiTraitement::getTraitementVideo(int i){
+void MultiTraitement::stopAll(){
+  for(int i = 0; i < this->vecteurTraitement.size(); i++){
+    vecteurTraitement[i]->stop();
+  }
+}
+
+TraitementVideo* MultiTraitement::getTraitementVideo(int i){
 
   return this->vecteurTraitement[i];
 }
 
-pthread_t MultiTraitement::getThread(int i){
+pthread_t * MultiTraitement::getThread(int i){
 
   return this->vecteurThread[i];
 }
+
+void MultiTraitement::threadAll(){
+  for(int i =0; i<this->vecteurTraitement.size();i++){
+    pthread_create(this->vecteurThread[i],NULL,&TraitementVideo::traitement,this->vecteurTraitement[i]);
+  }
+}
+
 
 int MultiTraitement::getNbElem(){
   return this->vecteurTraitement.size();
