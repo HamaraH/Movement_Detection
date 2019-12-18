@@ -69,24 +69,30 @@ private:
   Mat newframe;
   double sensibility;
   int seuil;
+  int imgParTraitement;
 
+  // queue des ilages a écrire : utilisé dans les threading
   ToWrite writeQueue;
 
+  //variable pour la gestion du threading
   pthread_t thread[2];
   int compteurThread;
 
-  //permet de stoper la detection
+  //variable de gestion du traitement
   bool continueTraitement;
   bool lastFlush;
 
 
 public:
 
+void init(String url);
 TraitementVideo();
 TraitementVideo(String url);
 TraitementVideo(String url, String name);
 TraitementVideo(String url, int seuil, double sensibility);
 TraitementVideo(String url, String name, int seuil, double sensibility);
+TraitementVideo(String url, int seuil, double sensibility, int imgParTraitement);
+TraitementVideo(String url, String name, int seuil, double sensibility, int imgParTraitement);
 ~TraitementVideo();
 
 bool presenceMouvement();
@@ -99,6 +105,7 @@ void initstop();
 string getIp();
 bool pingIp(string ipAdress);
 void readNextFrame();
+void readNextFrameSimple();
 
 VideoCapture* getCapture();
 void setCapture(VideoCapture cap);
@@ -150,11 +157,15 @@ void setLastFlush(bool value);
 pthread_t * getThread(int i);
 
 ToWrite* getWriteQueue();
-
+/*
 bool isCaptureOpened();
 bool isWriterOpened();
 
-bool writerOpen(string nomfichier);
+bool writerOpen(string nomfichier);*/
+
+int getImgParTraitement();
+void setImgParTraitement(int nbImg);
+
 
 };
 

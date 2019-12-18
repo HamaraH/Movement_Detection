@@ -24,12 +24,7 @@
 using namespace std;
 using namespace cv;
 
-TraitementVideo::TraitementVideo(){
-  this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
-  this->writeQueue.mutexInit();
-}
-
-TraitementVideo::TraitementVideo(String url){
+void TraitementVideo::init(String url){
   if(this->capture.isOpened()){
     this->capture.release();
   }
@@ -56,94 +51,50 @@ TraitementVideo::TraitementVideo(String url){
   this->seuil= 25;
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   this->writeQueue.mutexInit();
+  this->imgParTraitement = 4;
   // ping pas bon -> prévenir l'utilisateur
 }
 
-TraitementVideo::TraitementVideo(String url, String name){
-  if(this->capture.isOpened()){
-    this->capture.release();
-  }
-  this->url = url;
-  if(this->pingIp(this->getIp())){
-    Mat imgex;
-    this->capture.open(url);
-    this->capture.read(imgex);
-
-    this->setSize(imgex.cols,imgex.rows);
-    double temp = this->capture.get(CAP_PROP_FPS);
-    // on regarde si les fps sont valide car la fonction peut bug
-    if(temp>120){
-      temp =20;
-    }
-    this->setFps(temp);
-  }
-  else{
-    cout<<"ip non reconnue\n";
-  }
-  this->sensibility = 0.1;
-  this->seuil= 25;
-  this->cameraname = name;
+TraitementVideo::TraitementVideo(){
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   this->writeQueue.mutexInit();
+}
 
+TraitementVideo::TraitementVideo(String url){
+  this->init(url);
+}
+
+TraitementVideo::TraitementVideo(String url, String name){
+  this->init(url);
+  this->cameraname = name;
 }
 
 TraitementVideo::TraitementVideo(String url, int seuil, double sensibility){
-  if(this->capture.isOpened()){
-    this->capture.release();
-  }
-  this->url = url;
-  if(this->pingIp(this->getIp())){
-    Mat imgex;
-    this->capture.open(url);
-    this->capture.read(imgex);
-
-    this->setSize(imgex.cols,imgex.rows);
-    double temp = this->capture.get(CAP_PROP_FPS);
-    // on regarde si les fps sont valide car la fonction peut bug
-    if(temp>120){
-      temp =20;
-    }
-    this->setFps(temp);
-    this->cameraname = this->capture.getBackendName();
-  }
-  else{
-    cout<<"ip non reconnue\n";
-  }
+  this->init(url);
   this->seuil = seuil;
   this->sensibility = sensibility;
-  this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
-  this->writeQueue.mutexInit();
-
 }
 
-TraitementVideo::TraitementVideo(String ip, String name, int seuil, double sensibility){
-  if(this->capture.isOpened()){
-    this->capture.release();
-  }
-  this->url = url;
-  if(this->pingIp(this->getIp())){
-    Mat imgex;
-    this->capture.open(url);
-    this->capture.read(imgex);
-
-    this->setSize(imgex.cols,imgex.rows);
-    double temp = this->capture.get(CAP_PROP_FPS);
-    // on regarde si les fps sont valide car la fonction peut bug
-    if(temp>120){
-      temp =20;
-    }
-    this->setFps(temp);
-  }
-  else{
-    cout<<"ip non reconnue\n";
-  }
-  this->cameraname = name;
+TraitementVideo::TraitementVideo(String url, String name, int seuil, double sensibility){
+  this->init(url);
   this->seuil = seuil;
   this->sensibility = sensibility;
-  this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
-  this->writeQueue.mutexInit();
+  this->cameraname = name;
+}
 
+TraitementVideo::TraitementVideo(String url, int seuil, double sensibility, int imgParTraitement){
+  this->init(url);
+  this->seuil = seuil;
+  this->sensibility = sensibility;
+  this->imgParTraitement = imgParTraitement;
+}
+
+TraitementVideo::TraitementVideo(String url, String name, int seuil, double sensibility, int imgParTraitement){
+  this->init(url);
+  this->seuil = seuil;
+  this->sensibility = sensibility;
+  this->cameraname = name;
+  this->imgParTraitement = imgParTraitement;
 }
 
 TraitementVideo::~TraitementVideo(){
@@ -152,6 +103,7 @@ TraitementVideo::~TraitementVideo(){
   this->oldframe.release();
   this->newframe.release();*/
 }
+
 
 bool TraitementVideo::presenceMouvement(){
   Mat image_diff, image_diff_gris, image_binaire;
@@ -184,6 +136,8 @@ void *TraitementVideo::traitement(void *arg){
   if(data->getCameraName().empty()){
     data->setCameraName("defaultname");
   }
+
+  cout<<"début traitement "<<data->getCameraName()<<"\n";
 
   if(! data->getCapture()->isOpened()){
     if(data->pingIp(data->getIp())){
@@ -219,53 +173,69 @@ void *TraitementVideo::traitement(void *arg){
 
   /*// pour voir le temps d'exec
   clock_t t1, t2;
-  float temps;*/
+  float temps;
+  */
+  //permet de ne pas traiter toutes les images pour éconnomiqer des fps
+  int  compteurSansTraitement=data->getImgParTraitement();
 
   data->initstop();
   while(data->getContinueTraitement()) {
-
-
-    data->readNextFrame();
-
-
+    compteurSansTraitement = (compteurSansTraitement + 1) % 4;
 
     //t1 = clock();
 
-    if (data->getNewframe()->empty()) {
-      cout <<data->getCameraName()<< " frame mal chopée\n";
-      pthread_exit(NULL);
-    }
+    if(compteurSansTraitement==0){
 
-    //partie traitement des images
+      data->readNextFrame();
 
-    if (data->presenceMouvement()) {
-      //créer et ouvrir le fichier video si il n'est pas ouvert
-      if (! data->getWriter()->isOpened()) {
-        //pthread_t * thread = ;//-----------a revoir(on garde pas le thread)-------------------------------------zone sensible peu etre memoryleak ou erreur de seg
-        if(! pthread_create(data->getThread(data->getCompteurThread()),NULL,TraitementVideo::writeThread,data) == 0 ){
-          cout<<"problème de création de thread\n";
-        }
-        data->setCompteurThread((data->getCompteurThread()+1) % 2);
-        data->setLastFlush(true);
+      if (data->getNewframe()->empty()) {
+        cout <<data->getCameraName()<< " frame mal chopée\n";
+        pthread_exit(NULL);
       }
 
-      //ajout du contenue du buffer et de l'image du mouvement
+      //partie traitement des images
 
-      data->flushBuffer();
-      data->getBuffer()->clearBuffer();
-      //ajouter l'image
-      data->getWriteQueue()->mutexBlock();
-      data->getWriteQueue()->getQueue()->push(data->getNewframe()->clone());
-      data->getWriteQueue()->mutexOpen();
+      if (data->presenceMouvement()) {
+        //créer et ouvrir le fichier video si il n'est pas ouvert
+        if (! data->getWriter()->isOpened()) {
+          //pthread_t * thread = ;//-----------a revoir(on garde pas le thread)-------------------------------------zone sensible peu etre memoryleak ou erreur de seg
+          if(! pthread_create(data->getThread(data->getCompteurThread()),NULL,TraitementVideo::writeThread,data) == 0 ){
+            cout<<"problème de création de thread\n";
+          }
+          data->setCompteurThread((data->getCompteurThread()+1) % 2);
+          data->setLastFlush(true);
+        }
 
+        //ajout du contenue du buffer et de l'image du mouvement
+
+        data->flushBuffer();
+        data->getBuffer()->clearBuffer();
+        //ajouter l'image
+        data->getWriteQueue()->mutexBlock();
+        data->getWriteQueue()->getQueue()->push(data->getNewframe()->clone());
+        data->getWriteQueue()->mutexOpen();
+
+      }
+
+
+
+      else {
+
+        //non mouvement
+        //ajout de newframe au buffer
+
+        data->getBuffer()->addMat(data->getNewframe()->clone());
+        //cas pour la fermeture du fichier video
+        if (data->getBuffer()->isFull() && data->getWriter()->isOpened() && data->getLastFlush()) {
+          data->flushBuffer();
+          data->setLastFlush(false);
+          data->getWriteQueue()->setContinueWrite(false);
+
+        }
+      }
     }
-
-
-
-    else {
-      //t2 = clock();
-
-      //non mouvement
+    else{
+      // partie pour réduire la durée de traitement : on ne regarde pas si il y a un mouvement
       //ajout de newframe au buffer
 
       data->getBuffer()->addMat(data->getNewframe()->clone());
@@ -278,7 +248,9 @@ void *TraitementVideo::traitement(void *arg){
       }
     }
 
-    /*temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
+    /*t2 = clock();
+
+    temps = (float) (t2-t1)/ CLOCKS_PER_SEC;
     printf("temps d'exec = %f \n", temps);*/
   }
   //si on attendait les 2 secondes de fin : on envoie ce qu'il y a dans le buffer
@@ -292,6 +264,9 @@ void *TraitementVideo::traitement(void *arg){
     sleep(0.5);
     // attend la fermeture du writer = fin du thread d'écriture
   }
+
+  cout<<"fin traitement "<<data->getCameraName()<<"\n";
+
   pthread_exit(NULL);
 
 }
@@ -403,6 +378,10 @@ int ping = system(("ping " + ipAdress + " -c 2").c_str());
 
 void TraitementVideo::readNextFrame(){
   this->newframe.copyTo(this->oldframe);
+  this->capture.read(this->newframe);
+}
+
+void TraitementVideo::readNextFrameSimple(){
   this->capture.read(this->newframe);
 }
 
@@ -577,9 +556,14 @@ ToWrite* TraitementVideo::getWriteQueue(){
   return &this->writeQueue;
 }
 
+int TraitementVideo::getImgParTraitement(){
+  return this->imgParTraitement;
+}
+void TraitementVideo::setImgParTraitement(int nbImg){
+  this->imgParTraitement = nbImg;
+}
 
-
-
+/*
 bool TraitementVideo::isCaptureOpened(){
   return this->capture.isOpened();
 }
@@ -589,7 +573,7 @@ bool TraitementVideo::isWriterOpened(){
 
 bool TraitementVideo::writerOpen(string nomfichier){
   return this->writer.open(nomfichier,this->codec,this->fps,this->size,true);
-}
+}*/
 
 
 
@@ -644,28 +628,39 @@ void ToWrite::Purge(){
 
 MultiTraitement::MultiTraitement(){
   vector<String> ipList = MultiTraitement::getUrls("configuration.txt");
+  string url;
+  string name;
   for(int i = 0; i < ipList.size();i++){
-    cout<<"et de 1\n";
-    this->vecteurTraitement.push_back(new TraitementVideo(ipList[i]));
-    cout<<"la\n";
-    cout<<"ou la\n";
+    int pos = ipList[i].find(" ");
+    if(pos>-1){
+      url = ipList[i].substr(0,pos);
+      name = ipList[i].substr(pos+1,ipList[i].size()-pos);
+      this->vecteurTraitement.push_back(new TraitementVideo(url,name));
+    }
+    else{
+      this->vecteurTraitement.push_back(new TraitementVideo(ipList[i]));
+    }
     this->vecteurThread.push_back(new pthread_t);
-    cout<<"un de plus\n";
   }
 
 }
 
 MultiTraitement::MultiTraitement(string path){
   vector<String> ipList = MultiTraitement::getUrls(path);
+  string url;
+  string name;
   for(int i = 0; i < ipList.size();i++){
-    cout<<"et de 1\n";
-    this->vecteurTraitement.push_back(new TraitementVideo(ipList[i]));
-    cout<<"la\n";
-    cout<<"ou la\n";
+    int pos = ipList[i].find(" ");
+    if(pos>-1){
+      url = ipList[i].substr(0,pos);
+      name = ipList[i].substr(pos+1,ipList[i].size()-pos);
+      this->vecteurTraitement.push_back(new TraitementVideo(url,name));
+    }
+    else{
+      this->vecteurTraitement.push_back(new TraitementVideo(ipList[i]));
+    }
     this->vecteurThread.push_back(new pthread_t);
-    cout<<"un de plus\n";
   }
-
 }
 
 MultiTraitement::~MultiTraitement(){
