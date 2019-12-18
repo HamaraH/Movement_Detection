@@ -1,21 +1,18 @@
 #include <opencv2/opencv.hpp>
+#include <queue>
 
 #include "buffer.hpp"
 
-Buffer::Buffer(int fps){  //Constructeur
-    buffer= new cv::Mat[fps];
-    size = fps;
-    head = 0;
+Buffer::Buffer(int fps2t){  //Constructeur
+    this->size = fps2t;
 }
 
 Buffer::Buffer(){  //Constructeur
-    size = 30;
-    buffer = new cv::Mat[30];
-    head = 0;
+    this->size = 40;
 }
 
 Buffer::~Buffer(){
-    delete[] buffer;
+    this->buffer.~queue();
 }
 
 //Recupere la taille du buffer
@@ -23,75 +20,44 @@ int Buffer::getSize(){
     return size;
 }
 
-int Buffer::getHead(){
-    return head;
+void Buffer::setSize(int size){
+  this->size = size;
 }
 
-cv::Mat* Buffer::getBuffer(){    //Obtenir le buffer en entier
-    cv::Mat* tab;
-    tab = new cv::Mat[size];
-
-    /*cv::Mat* start = get_part_buffer(this->head,this->size-1);
-    cv::Mat* end = get_part_buffer(0,this->head-1);*/
-
-    int j = 0;
-
-    for( int i = head ; i<=size-1 ; i++ ) {
-        tab[j] = buffer[i];
-        j++;
-    }
-
-    for (int i = 0 ; i <= head - 1 ; i++ ) {
-        tab[j] = buffer[i];
-        j++;
-    }
-
-    return tab;
+std::queue<cv::Mat> Buffer::getBuffer(){    //Obtenir le buffer en entier
+  return this->buffer;
 }
+
 
 //Remettre le buffer à 0
 void Buffer::clearBuffer(){
-    for ( int i = 0 ; i < size ; i++ ){
-        buffer[i].release();
-// !!!       buffer[i] = NULL;
+    while(!this->buffer.empty()){
+      this->buffer.pop();
     }
-    head = 0;
 }
 
 //Verifier si le buffer est rempli
 bool Buffer::isFull(){
-    return (! (bool) buffer[ size-1 ].empty());
+    return (this->buffer.size()>=this->size);
 }
 
 //Verifier si le buffer est rempli
 bool Buffer::isEmpty(){
-    return ((bool) buffer[ 0 ].empty());
+    return (this->buffer.empty());
 
 }
 
 cv::Mat Buffer::getLastMat(){
-    return buffer[head-1%size];
+    return this->buffer.back();
 }
 
 void Buffer::addMat(cv::Mat image){
-    buffer[head].release();
-    buffer[head] = image;
-    if (head == size-1)
-        head = 0;
-    else
-        head++;
-}
-
-
- /*
-cv::Mat* Buffer::get_part_buffer(int a, int b){
-    cv::Mat resultat[];
-    resultat = (cv::Mat*) malloc (((b-a)+1) * sizeof(cv::Mat));
-    int j = 0;
-    for(int i = a ; i<=b ; i++){
-      resultat[j] = this->buffer[i];
-      j++;
+    if(this->buffer.size()>=this->size){
+      this->buffer.pop();
     }
-    return resultat;
+    this->buffer.push(image);
 }
-*/
+
+int Buffer::currentSize(){
+  return this->buffer.size();
+}
