@@ -202,6 +202,7 @@ void *TraitementVideo::traitement(void *arg){
           if(! pthread_create(data->getThread(data->getCompteurThread()),NULL,TraitementVideo::writeThread,data) == 0 ){
             cout<<"problème de création de thread\n";
           }
+          data->getWriteQueue()->setContinueWrite(true);
           data->setCompteurThread((data->getCompteurThread()+1) % 2);
           data->setLastFlush(true);
         }
@@ -284,8 +285,6 @@ void TraitementVideo::toToWrite(queue<Mat> temp){
 
 void *TraitementVideo::writeThread(void * arg){
 
-  data->getWriteQueue()->setContinueWrite(true);
-
   TraitementVideo * data = (TraitementVideo *) arg;
   cout<<"debut écriture\n";
 
@@ -313,20 +312,32 @@ void *TraitementVideo::writeThread(void * arg){
 
       data->getWriteQueue()->mutexOpen();
     }
+    else{
+      sleep(0.01);
+    }
   }
 
-  //
-  //peut etre optimisé
-  data->getWriteQueue()->mutexBlock();
-  queue<Mat> temp = data->getWriteQueue()->duplicateQueue();
-  data->getWriteQueue()->Purge();
-  data->getWriteQueue()->mutexOpen();
+  while(! data->getWriteQueue()->getContinueWrite() && ! data->getWriteQueue()->getQueue()->empty()){
+    data->getWriteQueue()->mutexBlock();
 
-  while(! temp.empty()){
-    data->getWriter()->write(temp.front());
-    temp.pop();
+    data->getWriter()->write(data->getWriteQueue()->getQueue()->front());
+    data->getWriteQueue()->getQueue()->pop();
+
+    data->getWriteQueue()->mutexOpen();
   }
 
+  //pour continuer d'écrire alors qu'un autre thread d'écriture est lancé :
+  if(! data->getWriteQueue()->getQueue()->empty()){
+    data->getWriteQueue()->mutexBlock();
+    queue<Mat> temp = data->getWriteQueue()->duplicateQueue();
+    data->getWriteQueue()->Purge();
+    data->getWriteQueue()->mutexOpen();
+
+    while(! temp.empty()){
+      data->getWriter()->write(temp.front());
+      temp.pop();
+    }
+  }
   data->getWriter()->release();
 
   cout<<"fin thread écriture\n";
@@ -520,7 +531,6 @@ void TraitementVideo::setFps(double fps){
   // génère un nouveau buffer
   this->fps=fps;
   this->buffer.setSize((int)fps*2);
-  cout<<this->getSize()<<"\n";
 }
 
 

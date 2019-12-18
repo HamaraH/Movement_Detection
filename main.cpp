@@ -4,7 +4,6 @@
 
 int main(){
   MultiTraitement t;
-  cout<<t.getNbElem()<<"\n";
   t.threadAll();
   int d;
   printf("entrer un nombre pour arreter\n");
