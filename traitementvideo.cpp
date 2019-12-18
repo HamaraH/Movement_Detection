@@ -237,6 +237,7 @@ void *TraitementVideo::traitement(void *arg){
     else{
       // partie pour réduire la durée de traitement : on ne regarde pas si il y a un mouvement
       //ajout de newframe au buffer
+      data->readNextFrameSimple();
 
       data->getBuffer()->addMat(data->getNewframe()->clone());
       //cas pour la fermeture du fichier video
