@@ -38,7 +38,7 @@ void TraitementVideo::init(String url){
     double temp = this->capture.get(CAP_PROP_FPS);
     // on regarde si les fps sont valide car la fonction peut bug
     if(temp>120){
-      temp =20;
+      temp =15;
     }
     this->setFps(temp);
 
@@ -47,8 +47,8 @@ void TraitementVideo::init(String url){
   else{
     cout<<"ip non reconnue\n";
   }
-  this->sensibility = 0.1;
-  this->seuil= 25;
+  this->sensibility = 0.05;
+  this->seuil= 10;
   this->codec = VideoWriter::fourcc('M', 'J', 'P', 'G');
   this->writeQueue.mutexInit();
   this->imgParTraitement = 4;
@@ -284,14 +284,15 @@ void TraitementVideo::toToWrite(queue<Mat> temp){
 
 void *TraitementVideo::writeThread(void * arg){
 
-  TraitementVideo * data = (TraitementVideo *) arg;
+  data->getWriteQueue()->setContinueWrite(true);
 
+  TraitementVideo * data = (TraitementVideo *) arg;
+  cout<<"debut écriture\n";
 
   while(data->getWriter()->isOpened()){
     sleep(0.5);
   }
 
-  data->getWriteQueue()->setContinueWrite(true);
 
   time_t tmm = time(0);
   tm* now = localtime(&tmm);
@@ -314,8 +315,8 @@ void *TraitementVideo::writeThread(void * arg){
     }
   }
 
-
-
+  //
+  //peut etre optimisé
   data->getWriteQueue()->mutexBlock();
   queue<Mat> temp = data->getWriteQueue()->duplicateQueue();
   data->getWriteQueue()->Purge();
@@ -519,6 +520,7 @@ void TraitementVideo::setFps(double fps){
   // génère un nouveau buffer
   this->fps=fps;
   this->buffer.setSize((int)fps*2);
+  cout<<this->getSize()<<"\n";
 }
 
 
@@ -563,20 +565,6 @@ int TraitementVideo::getImgParTraitement(){
 void TraitementVideo::setImgParTraitement(int nbImg){
   this->imgParTraitement = nbImg;
 }
-
-/*
-bool TraitementVideo::isCaptureOpened(){
-  return this->capture.isOpened();
-}
-bool TraitementVideo::isWriterOpened(){
-  return this->writer.isOpened();
-}
-
-bool TraitementVideo::writerOpen(string nomfichier){
-  return this->writer.open(nomfichier,this->codec,this->fps,this->size,true);
-}*/
-
-
 
 
 // class toWrite
