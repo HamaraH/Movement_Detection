@@ -1,1 +1,3 @@
-
+url foscam : rtsp://Flavien:Ledeux57@192.168.1.150:88/videoMain
+url hikvision : rtsp://admin:ouidenis7@192.168.0.64:554
+mot de passe du raspberry : Flavien57
